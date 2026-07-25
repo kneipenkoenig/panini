@@ -2,9 +2,19 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
   <title>StickerTausch 2026</title>
   <meta name="description" content="Mobile Webapp zum Verwalten gesuchter und doppelter Panini-Sticker.">
+  <meta name="theme-color" content="#193227">
+  <meta name="color-scheme" content="light">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StickerTausch">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,18 +23,25 @@
 <body class="app-booting is-gated">
   <div class="pin-gate" id="pinGate">
     <div class="pin-gate__card">
+      <div class="pin-gate__crest" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2.4l2.47 5.62 6.1.55-4.62 4.06 1.4 5.97L12 15.6l-5.35 2.99 1.4-5.96L3.43 8.57l6.1-.55L12 2.4z" fill="currentColor"/>
+        </svg>
+      </div>
       <div class="pin-gate__meta">
         <p class="eyebrow">StickerTausch 2026</p>
-        <span class="version-badge">v0.2.8</span>
+        <span class="version-badge">v0.3.0</span>
       </div>
-      <h1 class="pin-gate__title">Sammlung entsperren</h1>
+      <h1 class="pin-gate__title">Sammlung<br>entsperren</h1>
       <p class="hint">Bitte gib deine PIN ein, um die gemeinsame Liste zu öffnen.</p>
       <form class="auth-form auth-form--gate" id="authForm">
         <label class="field">
           <span class="field__label">Bearbeitungs-PIN</span>
-          <input id="authPinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="z. B. 2468">
+          <input id="authPinInput" class="pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="• • • •" maxlength="12">
         </label>
-        <button class="primary-button" type="submit">Öffnen</button>
+        <button class="primary-button" type="submit">
+          <span>Öffnen</span>
+        </button>
       </form>
       <p class="hint" id="authStatus">Zum Bearbeiten bitte deine PIN eingeben.</p>
     </div>
@@ -33,26 +50,39 @@
   <div class="app-shell">
     <header class="hero">
       <div class="hero__topline">
-        <p class="eyebrow">StickerTausch 2026</p>
+        <div class="hero__brand">
+          <span class="hero__crest" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2.4l2.47 5.62 6.1.55-4.62 4.06 1.4 5.97L12 15.6l-5.35 2.99 1.4-5.96L3.43 8.57l6.1-.55L12 2.4z" fill="currentColor"/>
+            </svg>
+          </span>
+          <p class="eyebrow">StickerTausch 2026</p>
+        </div>
         <div class="hero__meta">
           <span class="badge" id="modeBadge">Bearbeiten</span>
-          <span class="version-badge" id="versionBadge">v0.2.8</span>
+          <span class="version-badge" id="versionBadge">v0.3.0</span>
         </div>
       </div>
       <div class="hero__stats">
-        <article class="stat-card">
+        <article class="stat-card stat-card--wanted">
           <span class="stat-card__label">Gesucht</span>
           <strong class="stat-card__value" id="wantedCount">0</strong>
         </article>
-        <article class="stat-card">
+        <article class="stat-card stat-card--duplicate">
           <span class="stat-card__label">Doppelt</span>
           <strong class="stat-card__value" id="duplicateCount">0</strong>
         </article>
-        <article class="stat-card">
+        <article class="stat-card stat-card--album">
           <span class="stat-card__label">Album</span>
           <strong class="stat-card__value" id="teamCount">980</strong>
         </article>
       </div>
+      <button class="install-button is-hidden" id="installButton" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19.5h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>App installieren</span>
+      </button>
     </header>
 
     <p class="sync-status" id="syncStatus">Warte auf Verbindung …</p>

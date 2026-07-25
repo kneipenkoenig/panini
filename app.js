@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.2.8";
+const APP_VERSION = "0.3.0";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"] },
@@ -127,7 +127,8 @@ const elements = {
   authForm: document.querySelector("#authForm"),
   authPinInput: document.querySelector("#authPinInput"),
   authStatus: document.querySelector("#authStatus"),
-  syncStatus: document.querySelector("#syncStatus")
+  syncStatus: document.querySelector("#syncStatus"),
+  installButton: document.querySelector("#installButton")
 };
 
 init().catch(error => {
@@ -139,6 +140,8 @@ async function init() {
   renderVersion();
   populateTeamOptions();
   wireEvents();
+  registerServiceWorker();
+  wireInstallPrompt();
 
   const params = new URLSearchParams(window.location.search);
   const shareSlug = params.get(SHARE_PARAM);
@@ -1090,6 +1093,59 @@ function buildMissingEntries(team) {
 
 function updateSyncStatus(message) {
   elements.syncStatus.textContent = message;
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(error => {
+      console.warn("Service Worker konnte nicht registriert werden.", error);
+    });
+  });
+}
+
+function wireInstallPrompt() {
+  if (!elements.installButton) {
+    return;
+  }
+
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+    || window.navigator.standalone === true;
+  if (isStandalone) {
+    return;
+  }
+
+  let deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    deferredPrompt = event;
+    elements.installButton.classList.remove("is-hidden");
+  });
+
+  elements.installButton.addEventListener("click", async () => {
+    if (!deferredPrompt) {
+      const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+      showToast(isIOS
+        ? "In Safari: Teilen-Symbol antippen, dann „Zum Home-Bildschirm“."
+        : "Installation im Browser-Menü verfügbar.");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      showToast("App wird installiert.");
+    }
+    deferredPrompt = null;
+    elements.installButton.classList.add("is-hidden");
+  });
+
+  window.addEventListener("appinstalled", () => {
+    elements.installButton.classList.add("is-hidden");
+    showToast("StickerTausch ist jetzt installiert.");
+  });
 }
 
 let toastTimer = null;

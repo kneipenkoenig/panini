@@ -4,7 +4,7 @@ Mobile Webapp zum Verwalten von gesuchten und doppelten WM-2026-Stickern mit zen
 
 ## Aktuelle App-Version
 
-- `0.2.4`
+- `0.3.0`
 
 ## Was jetzt funktioniert
 
@@ -14,12 +14,16 @@ Mobile Webapp zum Verwalten von gesuchten und doppelten WM-2026-Stickern mit zen
 - Filter nach Team und Suche nach Nummer
 - öffentlicher Freigabelink für Tauschpartner
 - Speicherung in Cloudflare D1 statt nur im Browser
+- als PWA installierbar (Homescreen-Icon, Offline-Shell, Standalone-Fenster)
 
 ## Projektstruktur
 
 - `index.html` - Oberfläche
 - `styles.css` - Design und mobile UI
-- `app.js` - Frontend-Logik, API-Anbindung, Freigabelink
+- `app.js` - Frontend-Logik, API-Anbindung, Freigabelink, PWA-Installation
+- `manifest.webmanifest` - PWA-Manifest (Name, Icons, Theme)
+- `sw.js` - Service Worker für Offline-App-Shell
+- `icons/` - App-Icons (inkl. maskable-Varianten und Apple-Touch-Icon)
 - `functions/api/*.js` - Cloudflare Pages Functions
 - `db/migrations/0001_init.sql` - D1-Schema
 - `.openai/hosting.json` - logische Sites-/D1-Bindings
