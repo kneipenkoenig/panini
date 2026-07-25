@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.2.5";
+const APP_VERSION = "0.2.6";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"] },
@@ -98,10 +98,10 @@ const elements = {
   batchInput: document.querySelector("#batchInput"),
   searchInput: document.querySelector("#searchInput"),
   shareButton: document.querySelector("#shareButton"),
-  shareNavButton: document.querySelector("#shareNavButton"),
   copyShareButton: document.querySelector("#copyShareButton"),
   copyWantedButton: document.querySelector("#copyWantedButton"),
   copyDuplicateButton: document.querySelector("#copyDuplicateButton"),
+  topViewButtons: document.querySelectorAll("[data-top-view]"),
   shareBox: document.querySelector("#shareBox"),
   shareUrl: document.querySelector("#shareUrl"),
   listContainer: document.querySelector("#listContainer"),
@@ -109,7 +109,6 @@ const elements = {
   activeFilters: document.querySelector("#activeFilters"),
   toast: document.querySelector("#toast"),
   segmentedButtons: document.querySelectorAll(".segmented__item"),
-  viewButtons: document.querySelectorAll(".view-toggle__button"),
   teamCardTemplate: document.querySelector("#teamCardTemplate"),
   pillTemplate: document.querySelector("#pillTemplate"),
   teamOverviewGrid: document.querySelector("#teamOverviewGrid"),
@@ -177,11 +176,24 @@ function populateTeamOptions() {
 function wireEvents() {
   document.querySelectorAll("[data-section-tab]").forEach(button => {
     button.addEventListener("click", () => {
-      if (button.id === "shareNavButton") {
-        return;
-      }
       state.activeSection = button.dataset.sectionTab;
+      if (state.activeSection === "list") {
+        state.currentView = "all";
+      }
       renderSectionTabs();
+    });
+  });
+
+  elements.topViewButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      const view = button.dataset.topView;
+      if (view === "album") {
+        state.activeSection = "album";
+      } else {
+        state.activeSection = "list";
+        state.currentView = view;
+      }
+      render();
     });
   });
 
@@ -190,14 +202,6 @@ function wireEvents() {
       state.selectedStatus = button.dataset.status;
       updateStatusToggle();
       render();
-    });
-  });
-
-  elements.viewButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      state.currentView = button.dataset.view;
-      updateViewToggle();
-      renderList();
     });
   });
 
@@ -301,9 +305,6 @@ function wireEvents() {
   });
 
   elements.shareButton.addEventListener("click", async () => {
-    await ensureShareLink();
-  });
-  elements.shareNavButton.addEventListener("click", async () => {
     await ensureShareLink();
   });
 
@@ -416,8 +417,12 @@ function updateStatusToggle() {
 }
 
 function updateViewToggle() {
-  elements.viewButtons.forEach(button => {
-    button.classList.toggle("is-active", button.dataset.view === state.currentView);
+  elements.topViewButtons.forEach(button => {
+    const view = button.dataset.topView;
+    const isActive = view === "album"
+      ? state.activeSection === "album"
+      : state.activeSection === "list" && state.currentView === view;
+    button.classList.toggle("is-active", isActive);
   });
 }
 
@@ -434,7 +439,7 @@ function updateTeamStickerToggle() {
 }
 
 function renderSectionTabs() {
-  document.querySelectorAll(".section-tabs__item, .bottom-nav__item").forEach(button => {
+  document.querySelectorAll(".bottom-nav__item").forEach(button => {
     if (!button.dataset.sectionTab) {
       return;
     }
@@ -471,7 +476,6 @@ function renderMode() {
 
   document.querySelector("#capturePanel").style.display = editMode && isAuthenticated ? "" : "none";
   elements.shareButton.style.display = editMode && isAuthenticated ? "" : "none";
-  elements.shareNavButton.style.display = editMode && isAuthenticated ? "" : "none";
   elements.authStatus.textContent = isAuthenticated
     ? "Bearbeitung entsperrt."
     : "Zum Bearbeiten bitte deine PIN eingeben.";

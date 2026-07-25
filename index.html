@@ -54,14 +54,13 @@
 
     <p class="sync-status" id="syncStatus">Warte auf Verbindung …</p>
 
-    <main class="content">
-      <div class="section-tabs" role="tablist" aria-label="Bereiche">
-        <button class="section-tabs__item is-active" type="button" data-section-tab="teams">Teams</button>
-        <button class="section-tabs__item" type="button" data-section-tab="capture">Erfassen</button>
-        <button class="section-tabs__item" type="button" data-section-tab="list">Liste</button>
-        <button class="section-tabs__item" type="button" data-section-tab="album">Album</button>
-      </div>
+    <div class="top-views" role="tablist" aria-label="Schnellansichten">
+      <button class="top-views__item" type="button" data-top-view="wanted">Gesucht</button>
+      <button class="top-views__item" type="button" data-top-view="duplicate">Doppelt</button>
+      <button class="top-views__item" type="button" data-top-view="album">Album</button>
+    </div>
 
+    <main class="content">
       <section class="panel panel--facts" data-section-panel="album">
         <div class="panel__header">
           <div>
@@ -197,11 +196,6 @@
             <p class="panel__eyebrow">Deine Liste</p>
             <h2>Gesucht & doppelt</h2>
           </div>
-          <div class="view-toggle" role="tablist" aria-label="Ansicht wechseln">
-            <button class="view-toggle__button is-active" type="button" data-view="all">Alles</button>
-            <button class="view-toggle__button" type="button" data-view="wanted">Gesucht</button>
-            <button class="view-toggle__button" type="button" data-view="duplicate">Doppelt</button>
-          </div>
         </div>
 
         <div class="filters">
@@ -246,7 +240,6 @@
       <button class="bottom-nav__item is-active" type="button" data-section-tab="teams">Teams</button>
       <button class="bottom-nav__item" type="button" data-section-tab="capture">Erfassen</button>
       <button class="bottom-nav__item" type="button" data-section-tab="list">Liste</button>
-      <button class="bottom-nav__item" id="shareNavButton" type="button">Teilen</button>
     </nav>
 
     <p class="app-version-note" id="versionNote">Version v0.0.0</p>
