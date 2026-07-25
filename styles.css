@@ -509,6 +509,13 @@ a:focus {
   display: none;
 }
 
+.export-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 .chip-row {
   margin-top: 14px;
 }

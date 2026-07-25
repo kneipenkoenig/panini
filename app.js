@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.2.3";
+const APP_VERSION = "0.2.4";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"] },
@@ -100,6 +100,8 @@ const elements = {
   shareButton: document.querySelector("#shareButton"),
   shareNavButton: document.querySelector("#shareNavButton"),
   copyShareButton: document.querySelector("#copyShareButton"),
+  copyWantedButton: document.querySelector("#copyWantedButton"),
+  copyDuplicateButton: document.querySelector("#copyDuplicateButton"),
   shareBox: document.querySelector("#shareBox"),
   shareUrl: document.querySelector("#shareUrl"),
   listContainer: document.querySelector("#listContainer"),
@@ -313,6 +315,24 @@ function wireEvents() {
     }
   });
 
+  elements.copyWantedButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(buildWhatsappList("wanted"));
+      showToast("Gesucht-Liste kopiert.");
+    } catch (error) {
+      showToast("Gesucht-Liste konnte nicht kopiert werden.");
+    }
+  });
+
+  elements.copyDuplicateButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(buildWhatsappList("duplicate"));
+      showToast("Doppelt-Liste kopiert.");
+    } catch (error) {
+      showToast("Doppelt-Liste konnte nicht kopiert werden.");
+    }
+  });
+
   elements.resetButton.addEventListener("click", async () => {
     if (!canEdit()) {
       return;
@@ -342,16 +362,19 @@ async function authenticateAndLoad(pin, silent) {
     return;
   }
 
-  updateSyncStatus("Verbinde mit der Sammlung …");
-  try {
-    const response = await fetch("/api/collection", {
-      headers: authHeaders(pin)
-    });
-    const payload = await response.json();
+    updateSyncStatus("Verbinde mit der Sammlung …");
+    try {
+      const response = await fetch("/api/collection", {
+        headers: authHeaders(pin)
+      });
+      const payload = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      throw new Error(payload.error || "PIN ungültig");
-    }
+      if (!response.ok) {
+        if (response.status >= 500) {
+          throw new Error("Server-Konfiguration fehlt. Bitte Cloudflare DB/PIN prüfen.");
+        }
+        throw new Error(payload.error || "PIN ungültig");
+      }
 
     state.authPin = pin;
     state.stickers = payload.stickers || {};
@@ -653,6 +676,23 @@ function renderActiveFilters() {
   }
 
   elements.activeFilters.innerHTML = chips.map(chip => `<span class="filter-chip">${chip}</span>`).join("");
+}
+
+function buildWhatsappList(kind) {
+  const title = kind === "wanted" ? "Gesuchte Sticker:" : "Doppelte Sticker:";
+  const grouped = groupEntries();
+  const lines = grouped
+    .map(group => {
+      const entries = kind === "wanted" ? group.wanted : group.duplicate;
+      if (!entries.length) {
+        return "";
+      }
+      const values = entries.map(item => kind === "duplicate" && item.quantity > 1 ? `${item.number}x${item.quantity}` : item.number);
+      return `${group.team.id.toUpperCase()} ${values.join(", ")}`;
+    })
+    .filter(Boolean);
+
+  return lines.length ? `${title}\n${lines.join("\n")}` : `${title}\nKeine Einträge.`;
 }
 
 function groupEntries() {
