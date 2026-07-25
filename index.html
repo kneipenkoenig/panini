@@ -11,6 +11,22 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="pin-gate" id="pinGate">
+    <div class="pin-gate__card">
+      <p class="eyebrow">StickerTausch 2026</p>
+      <h1 class="pin-gate__title">Sammlung entsperren</h1>
+      <p class="hint">Bitte gib deine PIN ein, um die gemeinsame Liste zu öffnen.</p>
+      <form class="auth-form auth-form--gate" id="authForm">
+        <label class="field">
+          <span class="field__label">Bearbeitungs-PIN</span>
+          <input id="authPinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="z. B. 2468">
+        </label>
+        <button class="primary-button" type="submit">Öffnen</button>
+      </form>
+      <p class="hint" id="authStatus">Zum Bearbeiten bitte deine PIN eingeben.</p>
+    </div>
+  </div>
+
   <div class="app-shell">
     <header class="hero">
       <div class="hero__glow hero__glow--left"></div>
@@ -18,7 +34,10 @@
       <p class="eyebrow">WM 2026 Stickerverwaltung</p>
       <div class="hero__topline">
         <h1>StickerTausch 2026</h1>
-        <span class="badge" id="modeBadge">Bearbeiten</span>
+        <div class="hero__meta">
+          <span class="badge" id="modeBadge">Bearbeiten</span>
+          <span class="version-badge" id="versionBadge">v0.0.0</span>
+        </div>
       </div>
       <p class="hero__copy" id="heroCopy">
         Trage gesuchte und doppelte Sticker schnell ein und teile deine Liste per Link.
@@ -77,24 +96,6 @@
           <p><strong>Team-Schema:</strong> `1` Wappen, `2-12` Torhüter & Abwehr, `13` Teamfoto, `14-20` Mittelfeld & Sturm.</p>
           <p><strong>Spezialseiten:</strong> `FWC 1-8` Turnier-Intro und `FWC 00-19` Historie & Legenden.</p>
         </div>
-      </section>
-
-      <section class="panel panel--glass" id="authPanel" data-section-panel="capture">
-        <div class="panel__header">
-          <div>
-            <p class="panel__eyebrow">Zentrale Sammlung</p>
-            <h2>PIN-Zugang</h2>
-          </div>
-          <button class="ghost-button" id="authLogoutButton" type="button">Sperren</button>
-        </div>
-        <p class="hint" id="authStatus">Zum Bearbeiten bitte deine PIN eingeben.</p>
-        <form class="auth-form" id="authForm">
-          <label class="field">
-            <span class="field__label">Bearbeitungs-PIN</span>
-            <input id="authPinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="z. B. 2468">
-          </label>
-          <button class="primary-button" type="submit">Sammlung entsperren</button>
-        </form>
       </section>
 
       <section class="panel panel--glass" id="capturePanel" data-section-panel="capture">
@@ -187,12 +188,11 @@
         <div class="segmented" role="tablist" aria-label="Stickerstatus filtern" id="teamStickerFilters">
           <button class="segmented__item is-active" type="button" data-team-sticker-filter="all">Alle 1-20</button>
           <button class="segmented__item" type="button" data-team-sticker-filter="owned">Vorhanden</button>
-          <button class="segmented__item" type="button" data-team-sticker-filter="wanted">Gesucht</button>
           <button class="segmented__item" type="button" data-team-sticker-filter="duplicate">Doppelt</button>
-          <button class="segmented__item" type="button" data-team-sticker-filter="missing">Fehlt</button>
+          <button class="segmented__item" type="button" data-team-sticker-filter="missing">Offen</button>
         </div>
 
-        <p class="hint">Tippe auf einen Sticker: offen → gesucht → vorhanden → doppelt → vorhanden. Doppelt geht nur nach vorhanden.</p>
+        <p class="hint">Tippe auf einen Sticker: offen → vorhanden → doppelt → vorhanden. Offen bedeutet automatisch benötigt.</p>
         <div class="team-sticker-grid" id="teamStickerGrid"></div>
       </section>
 
@@ -248,6 +248,8 @@
       <button class="bottom-nav__item" type="button" data-section-tab="list">Liste</button>
       <button class="bottom-nav__item" id="shareNavButton" type="button">Teilen</button>
     </nav>
+
+    <p class="app-version-note" id="versionNote">Version v0.0.0</p>
   </div>
 
   <template id="teamCardTemplate">

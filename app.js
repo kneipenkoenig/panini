@@ -1,5 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
+const APP_VERSION = "0.2.1";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"] },
@@ -86,6 +87,8 @@ const elements = {
   wantedCount: document.querySelector("#wantedCount"),
   duplicateCount: document.querySelector("#duplicateCount"),
   teamCount: document.querySelector("#teamCount"),
+  versionBadge: document.querySelector("#versionBadge"),
+  versionNote: document.querySelector("#versionNote"),
   resetButton: document.querySelector("#resetButton"),
   teamSelect: document.querySelector("#teamSelect"),
   teamFilter: document.querySelector("#teamFilter"),
@@ -120,11 +123,10 @@ const elements = {
   teamStickerGrid: document.querySelector("#teamStickerGrid"),
   teamStickerButtons: document.querySelectorAll("[data-team-sticker-filter]"),
   backToTeamsButton: document.querySelector("#backToTeamsButton"),
-  authPanel: document.querySelector("#authPanel"),
+  pinGate: document.querySelector("#pinGate"),
   authForm: document.querySelector("#authForm"),
   authPinInput: document.querySelector("#authPinInput"),
   authStatus: document.querySelector("#authStatus"),
-  authLogoutButton: document.querySelector("#authLogoutButton"),
   syncStatus: document.querySelector("#syncStatus")
 };
 
@@ -134,6 +136,7 @@ init().catch(error => {
 });
 
 async function init() {
+  renderVersion();
   populateTeamOptions();
   wireEvents();
 
@@ -154,6 +157,12 @@ async function init() {
 
   state.isReady = true;
   render();
+}
+
+function renderVersion() {
+  const versionText = `v${APP_VERSION}`;
+  elements.versionBadge.textContent = versionText;
+  elements.versionNote.textContent = `Version ${versionText}`;
 }
 
 function populateTeamOptions() {
@@ -220,16 +229,6 @@ function wireEvents() {
     event.preventDefault();
     const pin = elements.authPinInput.value.trim();
     await authenticateAndLoad(pin, false);
-  });
-
-  elements.authLogoutButton.addEventListener("click", () => {
-    state.authPin = "";
-    state.stickers = {};
-    state.shareSlug = "";
-    window.localStorage.removeItem(PIN_STORAGE_KEY);
-    elements.authPinInput.value = "";
-    updateSyncStatus("Bearbeitung gesperrt.");
-    render();
   });
 
   elements.singleEntryForm.addEventListener("submit", async event => {
@@ -453,17 +452,18 @@ function renderMode() {
   document.querySelector("#capturePanel").style.display = editMode && isAuthenticated ? "" : "none";
   elements.shareButton.style.display = editMode && isAuthenticated ? "" : "none";
   elements.shareNavButton.style.display = editMode && isAuthenticated ? "" : "none";
-  elements.authPanel.style.display = editMode ? "" : "none";
   elements.authStatus.textContent = isAuthenticated
     ? "Bearbeitung entsperrt."
     : "Zum Bearbeiten bitte deine PIN eingeben.";
-  elements.authLogoutButton.style.display = isAuthenticated ? "" : "none";
+  const showGate = editMode && !isAuthenticated;
+  elements.pinGate.classList.toggle("is-visible", showGate);
+  document.body.classList.toggle("is-gated", showGate);
   renderSectionTabs();
 }
 
 function renderSummary() {
   const overview = buildTeamOverviewData();
-  const wanted = overview.reduce((total, team) => total + team.wantedCount, 0);
+  const wanted = overview.reduce((total, team) => total + team.missingCount, 0);
   const duplicates = overview.reduce((total, team) => total + team.duplicateCount, 0);
 
   elements.wantedCount.textContent = String(wanted);
@@ -484,9 +484,9 @@ function renderTeamOverview() {
 
   if (!overview.length) {
     elements.teamSearchResults.innerHTML = '<div class="empty-state">Kein Team passt zu deiner Suche oder dem Filter.</div>';
-  } else {
-    elements.teamSearchResults.innerHTML = "";
-    overview.forEach(team => {
+    } else {
+      elements.teamSearchResults.innerHTML = "";
+      overview.forEach(team => {
       const row = document.createElement("button");
       row.type = "button";
       row.className = "team-search-result";
@@ -495,13 +495,13 @@ function renderTeamOverview() {
           <div class="team-search-result__code">${team.id.toUpperCase()}</div>
           <h3>${team.label}</h3>
         </div>
-        <div class="team-search-result__meta">
-          <span class="team-search-result__group">${team.group || "Spezial"}</span>
-          <span class="mini-pill mini-pill--have">${team.haveCount}/${team.expectedCount}</span>
-          ${team.wantedCount ? `<span class="mini-pill mini-pill--need">gesucht ${team.wantedCount}</span>` : ""}
-          ${team.duplicateCount ? `<span class="mini-pill mini-pill--duplicate">doppelt ${team.duplicateCount}</span>` : ""}
-        </div>
-      `;
+          <div class="team-search-result__meta">
+            <span class="team-search-result__group">${team.group || "Spezial"}</span>
+            <span class="mini-pill mini-pill--have">${team.haveCount}/${team.expectedCount}</span>
+            ${team.missingCount ? `<span class="mini-pill mini-pill--need">offen ${team.missingCount}</span>` : ""}
+            ${team.duplicateCount ? `<span class="mini-pill mini-pill--duplicate">doppelt ${team.duplicateCount}</span>` : ""}
+          </div>
+        `;
       row.addEventListener("click", () => {
         state.filterTeam = team.id;
         elements.teamFilter.value = team.id;
@@ -536,7 +536,7 @@ function renderTeamDetail() {
   const detail = buildTeamOverviewData().find(entry => entry.id === team.id);
   elements.teamDetailStats.innerHTML = `
     <span class="mini-pill mini-pill--have">habe ${detail.haveCount}/${detail.expectedCount}</span>
-    <span class="mini-pill mini-pill--need">gesucht ${detail.wantedCount}</span>
+    <span class="mini-pill mini-pill--need">offen ${detail.missingCount}</span>
     <span class="mini-pill mini-pill--duplicate">doppelt ${detail.duplicateCount}</span>
     ${detail.isComplete ? '<span class="mini-pill mini-pill--complete">komplett</span>' : `<span class="mini-pill mini-pill--need">fehlen ${detail.missingCount}</span>`}
   `;
@@ -662,7 +662,7 @@ function renderActiveFilters() {
 function groupEntries() {
   return TEAMS.map(team => {
     const source = state.stickers[team.id] || {};
-    const wanted = Object.values(source).filter(item => item.status === "wanted").sort(sortByNumber);
+    const wanted = buildMissingEntries(team);
     const duplicate = Object.values(source).filter(item => item.status === "duplicate").sort(sortByNumber);
     return { team, wanted, duplicate };
   }).filter(group => group.wanted.length || group.duplicate.length);
@@ -674,7 +674,6 @@ function buildTeamOverviewData() {
     const entries = Object.values(source);
     const duplicateEntries = entries.filter(item => item.status === "duplicate");
     const ownedEntries = entries.filter(item => item.status === "owned");
-    const wantedEntries = entries.filter(item => item.status === "wanted");
     const haveCount = ownedEntries.length + duplicateEntries.length;
     const expectedCount = team.id === "fwc" ? 28 : TEAM_STICKER_LIMIT;
     const missingCount = Math.max(0, expectedCount - haveCount);
@@ -683,7 +682,7 @@ function buildTeamOverviewData() {
       ...team,
       expectedCount,
       haveCount,
-      wantedCount: wantedEntries.length,
+      wantedCount: missingCount,
       duplicateCount: duplicateEntries.length,
       missingCount,
       hasActivity: entries.length > 0,
@@ -715,9 +714,8 @@ function buildStickerCard(team, number) {
 function renderTeamStickerCard(card) {
   const statusLabel = {
     owned: "Vorhanden",
-    wanted: "Gesucht",
     duplicate: `Doppelt${card.quantity > 1 ? ` x${card.quantity}` : ""}`,
-    missing: "Noch offen"
+    missing: "Offen"
   }[card.status] || card.status;
 
   return `
@@ -949,9 +947,6 @@ function normalizeNumber(value) {
 function nextStickerStatus(teamId, number) {
   const current = state.stickers[teamId]?.[number]?.status || "missing";
   if (current === "missing") {
-    return "wanted";
-  }
-  if (current === "wanted") {
     return "owned";
   }
   if (current === "owned") {
@@ -1026,10 +1021,19 @@ function stickerRole(teamId, number) {
 function statusText(status) {
   return {
     missing: "offen",
-    wanted: "gesucht",
     owned: "vorhanden",
     duplicate: "doppelt"
   }[status] || status;
+}
+
+function buildMissingEntries(team) {
+  const cards = buildTeamStickerCards(team).filter(card => card.status === "missing");
+  return cards.map(card => ({
+    teamId: team.id,
+    number: card.number,
+    status: "missing",
+    quantity: 0
+  }));
 }
 
 function updateSyncStatus(message) {

@@ -2,6 +2,10 @@
 
 Mobile Webapp zum Verwalten von gesuchten und doppelten WM-2026-Stickern mit zentraler Speicherung über Cloudflare Pages + D1.
 
+## Aktuelle App-Version
+
+- `0.2.1`
+
 ## Was jetzt funktioniert
 
 - gemeinsame Sammlung für Handy und PC
