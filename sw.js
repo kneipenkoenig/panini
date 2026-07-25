@@ -1,5 +1,4 @@
-const APP_VERSION = "0.3.0";
-const CACHE_NAME = `stickertausch-shell-${APP_VERSION}`;
+const CACHE_NAME = "stickertausch-shell-v2";
 
 const SHELL_ASSETS = [
   "/",
@@ -32,6 +31,9 @@ self.addEventListener("activate", event => {
   );
 });
 
+// Network-first for everything in our own origin: an actively-updated app
+// must never get stuck showing stale HTML/CSS/JS just because a previous
+// visit cached it. The cache only exists as an offline fallback.
 self.addEventListener("fetch", event => {
   const { request } = event;
   if (request.method !== "GET") {
@@ -40,34 +42,25 @@ self.addEventListener("fetch", event => {
 
   const url = new URL(request.url);
 
-  // Never intercept API calls: they must always hit the network for live data.
   if (url.origin === self.location.origin && url.pathname.startsWith("/api/")) {
     return;
   }
 
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request).catch(() => caches.match("/index.html"))
-    );
+  if (url.origin !== self.location.origin && request.mode !== "navigate") {
     return;
   }
 
-  if (url.origin !== self.location.origin) {
-    return;
-  }
+  const fallbackUrl = request.mode === "navigate" ? "/index.html" : request;
 
   event.respondWith(
-    caches.match(request).then(cached => {
-      const network = fetch(request)
-        .then(response => {
-          if (response && response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(request, { cache: "no-store" })
+      .then(response => {
+        if (response && response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(fallbackUrl))
   );
 });
