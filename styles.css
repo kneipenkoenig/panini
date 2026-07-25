@@ -1041,6 +1041,8 @@ a:focus-visible {
   transform: translateX(-50%);
   width: min(calc(100% - 24px), 640px);
   justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 4px;
   padding: 8px;
   border: 1px solid rgba(247, 236, 219, 0.14);
   border-radius: 18px;
@@ -1058,6 +1060,12 @@ a:focus-visible {
 
 .bottom-nav__item {
   flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 6px;
+  padding-right: 6px;
   text-align: center;
   text-decoration: none;
   background: transparent;
