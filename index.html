@@ -49,37 +49,18 @@
 
   <div class="app-shell">
     <header class="topbar">
-      <div class="topbar__row">
-        <div class="topbar__brand">
-          <span class="hero__crest" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2.4l2.47 5.62 6.1.55-4.62 4.06 1.4 5.97L12 15.6l-5.35 2.99 1.4-5.96L3.43 8.57l6.1-.55L12 2.4z" fill="currentColor"/>
-            </svg>
-          </span>
-          <p class="eyebrow">StickerTausch 2026</p>
-        </div>
-        <div class="topbar__actions">
-          <button class="icon-button is-hidden" id="installButton" type="button" aria-label="App installieren" title="App installieren">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19.5h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-          <span class="badge" id="modeBadge">Bearbeiten</span>
-          <span class="version-badge" id="versionBadge">v0.3.0</span>
-        </div>
-      </div>
       <div class="topbar__kpis">
         <div class="kpi kpi--wanted">
-          <strong class="kpi__value" id="wantedCount">0</strong>
+          <strong class="kpi__value" id="wantedCount">0/980</strong>
           <span class="kpi__label">Gesucht</span>
         </div>
         <div class="kpi kpi--duplicate">
           <strong class="kpi__value" id="duplicateCount">0</strong>
           <span class="kpi__label">Doppelt</span>
         </div>
-        <div class="kpi kpi--album">
-          <strong class="kpi__value" id="teamCount">980</strong>
-          <span class="kpi__label">Album</span>
+        <div class="kpi kpi--percent">
+          <strong class="kpi__value kpi__value--large" id="fillPercent">0%</strong>
+          <span class="kpi__label">Füllstatus</span>
         </div>
       </div>
     </header>
@@ -118,62 +99,7 @@
         </div>
       </section>
 
-      <section class="panel panel--glass" id="capturePanel" data-section-panel="capture">
-        <div class="panel__header">
-          <div>
-            <p class="panel__eyebrow">Schnell erfassen</p>
-            <h2>Sticker eintragen</h2>
-          </div>
-          <button class="ghost-button" id="resetButton" type="button">Alles löschen</button>
-        </div>
-
-        <div class="segmented" role="tablist" aria-label="Stickerstatus auswählen">
-          <button class="segmented__item is-active" type="button" data-status="wanted">Gesucht</button>
-          <button class="segmented__item" type="button" data-status="duplicate">Doppelt</button>
-          <button class="segmented__item" type="button" data-status="owned">Vorhanden</button>
-        </div>
-
-        <form class="capture-form" id="singleEntryForm">
-          <label class="field">
-            <span class="field__label">Team / Kategorie</span>
-            <select id="teamSelect"></select>
-          </label>
-
-          <label class="field">
-            <span class="field__label">Sticker-Nummer</span>
-            <input id="stickerNumber" inputmode="numeric" autocomplete="off" placeholder="z. B. 17 oder 03">
-          </label>
-
-          <label class="field field--quantity">
-            <span class="field__label">Anzahl doppelt</span>
-            <div class="stepper">
-              <button type="button" class="stepper__button" data-step="-1" aria-label="Anzahl verringern">-</button>
-              <input id="duplicateQuantity" inputmode="numeric" value="2">
-              <button type="button" class="stepper__button" data-step="1" aria-label="Anzahl erhöhen">+</button>
-            </div>
-          </label>
-
-          <button class="primary-button" type="submit">Sticker speichern</button>
-        </form>
-
-        <form class="batch-form" id="batchForm">
-          <label class="field">
-            <span class="field__label">Batch-Eingabe</span>
-            <textarea id="batchInput" rows="3" placeholder="z. B. GER: 1, 13, 17 oder FWC: 1, 5, 08"></textarea>
-          </label>
-          <button class="secondary-button" type="submit">Batch übernehmen</button>
-          <p class="hint">Format flexibel: Teamname oder Kürzel plus Nummern, getrennt durch Komma oder Leerzeichen. Teamsticker laufen von `1-20`, Intro/Spezial über `FWC`.</p>
-        </form>
-      </section>
-
       <section class="panel" id="teamsPanel" data-section-panel="teams">
-        <div class="panel__header">
-          <div>
-            <p class="panel__eyebrow">Teamfinder</p>
-            <h2>Team suchen & direkt öffnen</h2>
-          </div>
-        </div>
-
         <div class="team-search">
           <label class="field">
             <span class="field__label">Teamname oder Kürzel</span>
@@ -181,12 +107,11 @@
           </label>
         </div>
 
-        <div class="segmented" role="tablist" aria-label="Teamstatus filtern" id="teamStatusFilters">
+        <div class="segmented segmented--fit" role="tablist" aria-label="Teamstatus filtern" id="teamStatusFilters">
           <button class="segmented__item is-active" type="button" data-team-status="all">Alle</button>
           <button class="segmented__item" type="button" data-team-status="have">Habe ich</button>
           <button class="segmented__item" type="button" data-team-status="need">Brauche ich</button>
           <button class="segmented__item" type="button" data-team-status="duplicate">Doppelt</button>
-          <button class="segmented__item" type="button" data-team-status="complete">Komplett</button>
         </div>
 
         <p class="hint team-overview__hint" id="teamOverviewSummary">Suche nach einem Team oder filtere nach Status.</p>
@@ -206,7 +131,29 @@
 
         <div class="team-detail__stats" id="teamDetailStats"></div>
 
-        <button class="secondary-button team-whatsapp-button" id="teamWhatsappButton" type="button">WhatsApp: Dieses Team</button>
+        <div class="team-copy-actions">
+          <button class="secondary-button copy-button" id="teamCopyWantedButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Fehlende</span>
+          </button>
+          <button class="secondary-button copy-button" id="teamCopyDuplicateButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Doppelte</span>
+          </button>
+          <button class="secondary-button copy-button" id="teamCopyBothButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Fehlende &amp; Doppelte</span>
+          </button>
+        </div>
 
         <div class="segmented" role="tablist" aria-label="Stickerstatus filtern" id="teamStickerFilters">
           <button class="segmented__item is-active" type="button" data-team-sticker-filter="all">Alle 1-20</button>
@@ -267,7 +214,6 @@
 
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <button class="bottom-nav__item is-active" type="button" data-section-tab="teams">Teams</button>
-      <button class="bottom-nav__item" type="button" data-section-tab="capture">Erfassen</button>
       <button class="bottom-nav__item" type="button" data-section-tab="list">Liste</button>
     </nav>
 

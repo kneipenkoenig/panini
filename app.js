@@ -56,8 +56,6 @@ const TEAMS = [
 
 const ALBUM_TOTAL_STICKERS = 980;
 const TEAM_STICKER_LIMIT = 20;
-const FWC_ALLOWED_NUMBERS = new Set(["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "1", "2", "3", "4", "5", "6", "7", "8"]);
-
 const STATUS_LABELS = {
   wanted: "Gesucht",
   duplicate: "Doppelt",
@@ -67,7 +65,6 @@ const STATUS_LABELS = {
 const state = {
   mode: "edit",
   activeSection: "teams",
-  selectedStatus: "wanted",
   currentView: "all",
   filterTeam: "all",
   teamStatusFilter: "all",
@@ -82,20 +79,11 @@ const state = {
 };
 
 const elements = {
-  modeBadge: document.querySelector("#modeBadge"),
   wantedCount: document.querySelector("#wantedCount"),
   duplicateCount: document.querySelector("#duplicateCount"),
-  teamCount: document.querySelector("#teamCount"),
-  versionBadge: document.querySelector("#versionBadge"),
+  fillPercent: document.querySelector("#fillPercent"),
   versionNote: document.querySelector("#versionNote"),
-  resetButton: document.querySelector("#resetButton"),
-  teamSelect: document.querySelector("#teamSelect"),
   teamFilter: document.querySelector("#teamFilter"),
-  stickerNumber: document.querySelector("#stickerNumber"),
-  duplicateQuantity: document.querySelector("#duplicateQuantity"),
-  singleEntryForm: document.querySelector("#singleEntryForm"),
-  batchForm: document.querySelector("#batchForm"),
-  batchInput: document.querySelector("#batchInput"),
   searchInput: document.querySelector("#searchInput"),
   shareButton: document.querySelector("#shareButton"),
   copyShareButton: document.querySelector("#copyShareButton"),
@@ -107,7 +95,6 @@ const elements = {
   listSummary: document.querySelector("#listSummary"),
   activeFilters: document.querySelector("#activeFilters"),
   toast: document.querySelector("#toast"),
-  segmentedButtons: document.querySelectorAll(".segmented__item"),
   teamCardTemplate: document.querySelector("#teamCardTemplate"),
   pillTemplate: document.querySelector("#pillTemplate"),
   teamOverviewGrid: document.querySelector("#teamOverviewGrid"),
@@ -122,13 +109,14 @@ const elements = {
   teamStickerGrid: document.querySelector("#teamStickerGrid"),
   teamStickerButtons: document.querySelectorAll("[data-team-sticker-filter]"),
   backToTeamsButton: document.querySelector("#backToTeamsButton"),
-  teamWhatsappButton: document.querySelector("#teamWhatsappButton"),
+  teamCopyWantedButton: document.querySelector("#teamCopyWantedButton"),
+  teamCopyDuplicateButton: document.querySelector("#teamCopyDuplicateButton"),
+  teamCopyBothButton: document.querySelector("#teamCopyBothButton"),
   pinGate: document.querySelector("#pinGate"),
   authForm: document.querySelector("#authForm"),
   authPinInput: document.querySelector("#authPinInput"),
   authStatus: document.querySelector("#authStatus"),
-  syncStatus: document.querySelector("#syncStatus"),
-  installButton: document.querySelector("#installButton")
+  syncStatus: document.querySelector("#syncStatus")
 };
 
 init().catch(error => {
@@ -141,7 +129,6 @@ async function init() {
   populateTeamOptions();
   wireEvents();
   registerServiceWorker();
-  wireInstallPrompt();
 
   const params = new URLSearchParams(window.location.search);
   const shareSlug = params.get(SHARE_PARAM);
@@ -164,16 +151,12 @@ async function init() {
 }
 
 function renderVersion() {
-  const versionText = `v${APP_VERSION}`;
-  elements.versionBadge.textContent = versionText;
-  elements.versionNote.textContent = `Version ${versionText}`;
+  elements.versionNote.textContent = `Version v${APP_VERSION}`;
 }
 
 function populateTeamOptions() {
   const allTeamsOption = [{ value: "all", label: "Alle Teams" }, ...TEAMS.map(team => ({ value: team.id, label: team.label }))];
-  elements.teamSelect.innerHTML = TEAMS.map(team => `<option value="${team.id}">${team.group ? `${team.group} · ${team.label}` : team.label}</option>`).join("");
   elements.teamFilter.innerHTML = allTeamsOption.map(team => `<option value="${team.value}">${team.label}</option>`).join("");
-  elements.teamCount.textContent = String(ALBUM_TOTAL_STICKERS);
 }
 
 function wireEvents() {
@@ -184,14 +167,6 @@ function wireEvents() {
         state.currentView = "all";
       }
       renderSectionTabs();
-    });
-  });
-
-  elements.segmentedButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      state.selectedStatus = button.dataset.status;
-      updateStatusToggle();
-      render();
     });
   });
 
@@ -225,63 +200,6 @@ function wireEvents() {
     event.preventDefault();
     const pin = elements.authPinInput.value.trim();
     await authenticateAndLoad(pin, false);
-  });
-
-  elements.singleEntryForm.addEventListener("submit", async event => {
-    event.preventDefault();
-    if (!canEdit()) {
-      showToast("Bitte zuerst mit PIN entsperren.");
-      return;
-    }
-
-    const teamId = elements.teamSelect.value;
-    const number = normalizeNumber(elements.stickerNumber.value);
-    const quantity = Math.max(1, Number.parseInt(elements.duplicateQuantity.value || "1", 10));
-
-    if (!number) {
-      showToast("Bitte zuerst eine Sticker-Nummer eintragen.");
-      elements.stickerNumber.focus();
-      return;
-    }
-
-    if (!isValidStickerNumber(teamId, number)) {
-      showToast(validationMessage(teamId));
-      elements.stickerNumber.focus();
-      return;
-    }
-
-    upsertSticker(teamId, number, state.selectedStatus, quantity);
-    elements.stickerNumber.value = "";
-    if (state.selectedStatus !== "duplicate") {
-      elements.duplicateQuantity.value = "2";
-    }
-    render();
-    await persistCollection(`Sticker ${teamLabel(teamId)} ${number} gespeichert.`);
-  });
-
-  elements.batchForm.addEventListener("submit", async event => {
-    event.preventDefault();
-    if (!canEdit()) {
-      showToast("Bitte zuerst mit PIN entsperren.");
-      return;
-    }
-
-    const result = parseBatchInput(elements.batchInput.value);
-    if (!result.entries.length) {
-      showToast("Die Batch-Eingabe konnte nicht erkannt werden.");
-      return;
-    }
-
-    const validEntries = result.entries.filter(entry => isValidStickerNumber(entry.teamId, entry.number));
-    if (!validEntries.length) {
-      showToast("In der Batch-Eingabe waren keine gültigen Sticker enthalten.");
-      return;
-    }
-
-    validEntries.forEach(entry => upsertSticker(entry.teamId, entry.number, state.selectedStatus, 2));
-    render();
-    elements.batchInput.value = "";
-    await persistCollection(`${validEntries.length} Sticker übernommen.`);
   });
 
   elements.searchInput.addEventListener("input", event => {
@@ -325,34 +243,22 @@ function wireEvents() {
     }
   });
 
-  elements.teamWhatsappButton.addEventListener("click", async () => {
-    if (state.filterTeam === "all") {
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(buildTeamWhatsappText(state.filterTeam));
-      showToast(`${teamLabel(state.filterTeam)}-Liste kopiert.`);
-    } catch (error) {
-      showToast("Liste konnte nicht kopiert werden.");
-    }
-  });
-
-  elements.resetButton.addEventListener("click", async () => {
-    if (!canEdit()) {
-      return;
-    }
-    if (!window.confirm("Wirklich alle Sticker-Einträge löschen?")) {
-      return;
-    }
-    state.stickers = {};
-    render();
-    await persistCollection("Liste geleert.");
-  });
-
-  document.querySelectorAll("[data-step]").forEach(button => {
-    button.addEventListener("click", () => {
-      const next = Math.max(1, Number.parseInt(elements.duplicateQuantity.value || "1", 10) + Number.parseInt(button.dataset.step, 10));
-      elements.duplicateQuantity.value = String(next);
+  const teamCopyHandlers = [
+    [elements.teamCopyWantedButton, "wanted", "Fehlende"],
+    [elements.teamCopyDuplicateButton, "duplicate", "Doppelte"],
+    [elements.teamCopyBothButton, "both", "Fehlende & Doppelte"]
+  ];
+  teamCopyHandlers.forEach(([button, kind, label]) => {
+    button.addEventListener("click", async () => {
+      if (state.filterTeam === "all") {
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(buildTeamWhatsappText(state.filterTeam, kind));
+        showToast(`${label} (${teamLabel(state.filterTeam)}) kopiert.`);
+      } catch (error) {
+        showToast("Liste konnte nicht kopiert werden.");
+      }
     });
   });
 }
@@ -412,12 +318,6 @@ async function loadPublicCollection(shareSlug) {
   updateSyncStatus("Öffentliche Liste geladen.");
 }
 
-function updateStatusToggle() {
-  elements.segmentedButtons.forEach(button => {
-    button.classList.toggle("is-active", button.dataset.status === state.selectedStatus);
-  });
-}
-
 function updateTeamStatusToggle() {
   elements.teamStatusButtons.forEach(button => {
     button.classList.toggle("is-active", button.dataset.teamStatus === state.teamStatusFilter);
@@ -440,18 +340,13 @@ function renderSectionTabs() {
 
   document.querySelectorAll("[data-section-panel]").forEach(panel => {
     const section = panel.getAttribute("data-section-panel");
-    let visible = section === state.activeSection;
-    if (section === "capture" && panel.id === "authPanel" && state.activeSection === "capture") {
-      visible = true;
-    }
-    panel.classList.toggle("is-active", visible);
+    panel.classList.toggle("is-active", section === state.activeSection);
   });
   elements.teamPagePanel.classList.toggle("is-hidden", !(state.activeSection === "team" && state.filterTeam !== "all"));
 }
 
 function render() {
   renderSectionTabs();
-  updateStatusToggle();
   updateTeamStatusToggle();
   updateTeamStickerToggle();
   renderMode();
@@ -463,9 +358,7 @@ function render() {
 function renderMode() {
   const editMode = state.mode === "edit";
   const isAuthenticated = canEdit();
-  elements.modeBadge.textContent = editMode ? (isAuthenticated ? "Bearbeiten" : "Gesperrt") : "Freigabe";
 
-  document.querySelector("#capturePanel").style.display = editMode && isAuthenticated ? "" : "none";
   elements.shareButton.style.display = editMode && isAuthenticated ? "" : "none";
   elements.authStatus.textContent = isAuthenticated
     ? "Bearbeitung entsperrt."
@@ -480,9 +373,12 @@ function renderSummary() {
   const overview = buildTeamOverviewData();
   const wanted = overview.reduce((total, team) => total + team.missingCount, 0);
   const duplicates = overview.reduce((total, team) => total + team.duplicateCount, 0);
+  const haveCount = overview.reduce((total, team) => total + team.haveCount, 0);
+  const fillPercent = Math.round((haveCount / ALBUM_TOTAL_STICKERS) * 100);
 
-  elements.wantedCount.textContent = String(wanted);
+  elements.wantedCount.textContent = `${wanted}/${ALBUM_TOTAL_STICKERS}`;
   elements.duplicateCount.textContent = String(duplicates);
+  elements.fillPercent.textContent = `${fillPercent}%`;
   elements.listSummary.textContent = wanted + duplicates === 0
     ? "Noch keine Sticker eingetragen."
     : `${wanted} gesucht, ${duplicates} doppelte Sticker in ${overview.filter(team => team.hasActivity).length} Teamblöcken.`;
@@ -502,7 +398,7 @@ function renderTeamOverview() {
     elements.teamSearchResults.innerHTML = '<div class="empty-state">Kein Team passt zu deiner Suche oder dem Filter.</div>';
   } else {
     elements.teamOverviewGrid.innerHTML = overview.map(team => `
-      <button class="team-tile" type="button" data-team-tile="${team.id}">
+      <button class="team-tile" type="button" data-team-tile="${team.id}" style="background-color: ${completionTint(team.haveCount / team.expectedCount)};">
         <span class="team-tile__code">${team.id.toUpperCase()}</span>
         <span class="team-tile__name">${team.label}</span>
         <span class="team-tile__stats">${team.haveCount}/${team.expectedCount}</span>
@@ -695,7 +591,7 @@ function buildWhatsappList(kind) {
   return lines.length ? `${title}\n${lines.join("\n")}` : `${title}\nKeine Einträge.`;
 }
 
-function buildTeamWhatsappText(teamId) {
+function buildTeamWhatsappText(teamId, kind = "both") {
   const team = TEAMS.find(entry => entry.id === teamId);
   const cards = buildTeamStickerCards(team);
   const wanted = cards.filter(card => card.status === "missing").map(card => card.number);
@@ -704,8 +600,12 @@ function buildTeamWhatsappText(teamId) {
     .map(card => card.quantity > 1 ? `${card.number}x${card.quantity}` : card.number);
 
   const lines = [`${team.label} (${team.id.toUpperCase()}):`];
-  lines.push(`Gesucht: ${wanted.length ? wanted.join(", ") : "keine"}`);
-  lines.push(`Doppelt: ${duplicate.length ? duplicate.join(", ") : "keine"}`);
+  if (kind === "wanted" || kind === "both") {
+    lines.push(`Gesucht: ${wanted.length ? wanted.join(", ") : "keine"}`);
+  }
+  if (kind === "duplicate" || kind === "both") {
+    lines.push(`Doppelt: ${duplicate.length ? duplicate.join(", ") : "keine"}`);
+  }
   return lines.join("\n");
 }
 
@@ -948,51 +848,6 @@ function authHeaders(pin) {
   };
 }
 
-function parseBatchInput(rawText) {
-  const cleaned = rawText.trim();
-  if (!cleaned) {
-    return { entries: [] };
-  }
-
-  const [left, right] = cleaned.includes(":") ? cleaned.split(":") : cleaned.split(/\s+/, 2);
-  const teamId = findTeamId(left);
-  const numbersSource = cleaned.includes(":") ? right : cleaned.slice(left.length);
-  if (!teamId) {
-    return { entries: [] };
-  }
-
-  const numbers = (numbersSource || "")
-    .match(/\d+/g)
-    ?.map(normalizeNumber)
-    .filter(Boolean) || [];
-
-  return {
-    entries: numbers.map(number => ({ teamId, number }))
-  };
-}
-
-function findTeamId(input) {
-  const normalized = (input || "").trim().toLowerCase();
-  const team = TEAMS.find(entry =>
-    entry.label.toLowerCase() === normalized ||
-    entry.id === normalized ||
-    entry.aliases.includes(normalized)
-  );
-  return team ? team.id : null;
-}
-
-function normalizeNumber(value) {
-  const match = String(value || "").match(/\d+/);
-  if (!match) {
-    return "";
-  }
-  const raw = match[0];
-  if (raw.length > 1 && raw.startsWith("0")) {
-    return raw;
-  }
-  return String(Number.parseInt(raw, 10));
-}
-
 function nextStickerState(teamId, number) {
   const current = state.stickers[teamId]?.[number];
   const status = current?.status || "missing";
@@ -1013,27 +868,18 @@ function nextStickerState(teamId, number) {
 function openTeam(teamId) {
   state.filterTeam = teamId;
   elements.teamFilter.value = teamId;
-  elements.teamSelect.value = teamId;
   state.activeSection = "team";
   render();
 }
 
-function isValidStickerNumber(teamId, number) {
-  if (teamId === "fwc") {
-    return FWC_ALLOWED_NUMBERS.has(String(number));
-  }
-  const numeric = Number.parseInt(number, 10);
-  return Number.isInteger(numeric) && numeric >= 1 && numeric <= TEAM_STICKER_LIMIT;
-}
-
-function validationMessage(teamId) {
-  return teamId === "fwc"
-    ? "Für FWC sind die Intro-Sticker 1-8 und die Spezialsticker 00-19 vorgesehen."
-    : "Teamsticker laufen von 1 bis 20.";
-}
-
 function sortByNumber(a, b) {
   return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10);
+}
+
+function completionTint(ratio) {
+  const clamped = Math.max(0, Math.min(1, ratio));
+  const hue = Math.round(clamped * 120);
+  return `hsla(${hue}, 65%, 45%, 0.22)`;
 }
 
 function teamLabel(teamId) {
@@ -1108,48 +954,6 @@ function registerServiceWorker() {
     navigator.serviceWorker.register("/sw.js").catch(error => {
       console.warn("Service Worker konnte nicht registriert werden.", error);
     });
-  });
-}
-
-function wireInstallPrompt() {
-  if (!elements.installButton) {
-    return;
-  }
-
-  const isStandalone = window.matchMedia("(display-mode: standalone)").matches
-    || window.navigator.standalone === true;
-  if (isStandalone) {
-    return;
-  }
-
-  let deferredPrompt = null;
-
-  window.addEventListener("beforeinstallprompt", event => {
-    event.preventDefault();
-    deferredPrompt = event;
-    elements.installButton.classList.remove("is-hidden");
-  });
-
-  elements.installButton.addEventListener("click", async () => {
-    if (!deferredPrompt) {
-      const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-      showToast(isIOS
-        ? "In Safari: Teilen-Symbol antippen, dann „Zum Home-Bildschirm“."
-        : "Installation im Browser-Menü verfügbar.");
-      return;
-    }
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      showToast("App wird installiert.");
-    }
-    deferredPrompt = null;
-    elements.installButton.classList.add("is-hidden");
-  });
-
-  window.addEventListener("appinstalled", () => {
-    elements.installButton.classList.add("is-hidden");
-    showToast("StickerTausch ist jetzt installiert.");
   });
 }
 
