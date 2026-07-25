@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.2.6";
+const APP_VERSION = "0.2.7";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"] },
@@ -150,9 +150,6 @@ async function init() {
   } else {
     state.authPin = window.localStorage.getItem(PIN_STORAGE_KEY) || "";
     elements.authPinInput.value = state.authPin;
-    if (state.authPin) {
-      await authenticateAndLoad(state.authPin, true);
-    }
   }
 
   state.isReady = true;
