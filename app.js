@@ -122,6 +122,7 @@ const elements = {
   teamStickerGrid: document.querySelector("#teamStickerGrid"),
   teamStickerButtons: document.querySelectorAll("[data-team-sticker-filter]"),
   backToTeamsButton: document.querySelector("#backToTeamsButton"),
+  teamWhatsappButton: document.querySelector("#teamWhatsappButton"),
   pinGate: document.querySelector("#pinGate"),
   authForm: document.querySelector("#authForm"),
   authPinInput: document.querySelector("#authPinInput"),
@@ -321,6 +322,18 @@ function wireEvents() {
       showToast("Doppelt-Liste kopiert.");
     } catch (error) {
       showToast("Doppelt-Liste konnte nicht kopiert werden.");
+    }
+  });
+
+  elements.teamWhatsappButton.addEventListener("click", async () => {
+    if (state.filterTeam === "all") {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(buildTeamWhatsappText(state.filterTeam));
+      showToast(`${teamLabel(state.filterTeam)}-Liste kopiert.`);
+    } catch (error) {
+      showToast("Liste konnte nicht kopiert werden.");
     }
   });
 
@@ -680,6 +693,20 @@ function buildWhatsappList(kind) {
     .filter(Boolean);
 
   return lines.length ? `${title}\n${lines.join("\n")}` : `${title}\nKeine Einträge.`;
+}
+
+function buildTeamWhatsappText(teamId) {
+  const team = TEAMS.find(entry => entry.id === teamId);
+  const cards = buildTeamStickerCards(team);
+  const wanted = cards.filter(card => card.status === "missing").map(card => card.number);
+  const duplicate = cards
+    .filter(card => card.status === "duplicate")
+    .map(card => card.quantity > 1 ? `${card.number}x${card.quantity}` : card.number);
+
+  const lines = [`${team.label} (${team.id.toUpperCase()}):`];
+  lines.push(`Gesucht: ${wanted.length ? wanted.join(", ") : "keine"}`);
+  lines.push(`Doppelt: ${duplicate.length ? duplicate.join(", ") : "keine"}`);
+  return lines.join("\n");
 }
 
 function groupEntries() {

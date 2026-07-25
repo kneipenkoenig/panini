@@ -899,6 +899,11 @@ a:focus-visible {
   gap: 10px;
 }
 
+.team-whatsapp-button {
+  display: inline-flex;
+  margin-top: 12px;
+}
+
 .team-sticker-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
