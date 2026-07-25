@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>StickerTausch 2026</title>
+  <meta name="description" content="Mobile Webapp zum Verwalten gesuchter und doppelter Panini-Sticker.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero__glow hero__glow--left"></div>
+      <div class="hero__glow hero__glow--right"></div>
+      <p class="eyebrow">WM 2026 Stickerverwaltung</p>
+      <div class="hero__topline">
+        <h1>StickerTausch 2026</h1>
+        <span class="badge" id="modeBadge">Bearbeiten</span>
+      </div>
+      <p class="hero__copy" id="heroCopy">
+        Trage gesuchte und doppelte Sticker schnell ein und teile deine Liste per Link.
+      </p>
+      <div class="hero__stats">
+        <article class="stat-card">
+          <span class="stat-card__label">Gesucht</span>
+          <strong class="stat-card__value" id="wantedCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Doppelt</span>
+          <strong class="stat-card__value" id="duplicateCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Album</span>
+          <strong class="stat-card__value" id="teamCount">980</strong>
+        </article>
+      </div>
+      <p class="sync-status" id="syncStatus">Warte auf Verbindung …</p>
+    </header>
+
+    <main class="content">
+      <div class="section-tabs" role="tablist" aria-label="Bereiche">
+        <button class="section-tabs__item is-active" type="button" data-section-tab="teams">Teams</button>
+        <button class="section-tabs__item" type="button" data-section-tab="capture">Erfassen</button>
+        <button class="section-tabs__item" type="button" data-section-tab="list">Liste</button>
+        <button class="section-tabs__item" type="button" data-section-tab="album">Album</button>
+      </div>
+
+      <section class="panel panel--facts" data-section-panel="album">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Albumstruktur</p>
+            <h2>WM 2026 auf einen Blick</h2>
+          </div>
+        </div>
+        <div class="facts-grid">
+          <article class="fact-tile">
+            <span class="fact-tile__value">980</span>
+            <span class="fact-tile__label">Sticker gesamt</span>
+          </article>
+          <article class="fact-tile">
+            <span class="fact-tile__value">112</span>
+            <span class="fact-tile__label">Seiten</span>
+          </article>
+          <article class="fact-tile">
+            <span class="fact-tile__value">48</span>
+            <span class="fact-tile__label">Teams</span>
+          </article>
+          <article class="fact-tile">
+            <span class="fact-tile__value">7</span>
+            <span class="fact-tile__label">Sticker pro Tüte</span>
+          </article>
+        </div>
+        <div class="album-notes">
+          <p><strong>Team-Schema:</strong> `1` Wappen, `2-12` Torhüter & Abwehr, `13` Teamfoto, `14-20` Mittelfeld & Sturm.</p>
+          <p><strong>Spezialseiten:</strong> `FWC 1-8` Turnier-Intro und `FWC 00-19` Historie & Legenden.</p>
+        </div>
+      </section>
+
+      <section class="panel panel--glass" id="authPanel" data-section-panel="capture">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Zentrale Sammlung</p>
+            <h2>PIN-Zugang</h2>
+          </div>
+          <button class="ghost-button" id="authLogoutButton" type="button">Sperren</button>
+        </div>
+        <p class="hint" id="authStatus">Zum Bearbeiten bitte deine PIN eingeben.</p>
+        <form class="auth-form" id="authForm">
+          <label class="field">
+            <span class="field__label">Bearbeitungs-PIN</span>
+            <input id="authPinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="z. B. 2468">
+          </label>
+          <button class="primary-button" type="submit">Sammlung entsperren</button>
+        </form>
+      </section>
+
+      <section class="panel panel--glass" id="capturePanel" data-section-panel="capture">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Schnell erfassen</p>
+            <h2>Sticker eintragen</h2>
+          </div>
+          <button class="ghost-button" id="resetButton" type="button">Alles löschen</button>
+        </div>
+
+        <div class="segmented" role="tablist" aria-label="Stickerstatus auswählen">
+          <button class="segmented__item is-active" type="button" data-status="wanted">Gesucht</button>
+          <button class="segmented__item" type="button" data-status="duplicate">Doppelt</button>
+          <button class="segmented__item" type="button" data-status="owned">Vorhanden</button>
+        </div>
+
+        <form class="capture-form" id="singleEntryForm">
+          <label class="field">
+            <span class="field__label">Team / Kategorie</span>
+            <select id="teamSelect"></select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Sticker-Nummer</span>
+            <input id="stickerNumber" inputmode="numeric" autocomplete="off" placeholder="z. B. 17 oder 03">
+          </label>
+
+          <label class="field field--quantity">
+            <span class="field__label">Anzahl doppelt</span>
+            <div class="stepper">
+              <button type="button" class="stepper__button" data-step="-1" aria-label="Anzahl verringern">-</button>
+              <input id="duplicateQuantity" inputmode="numeric" value="2">
+              <button type="button" class="stepper__button" data-step="1" aria-label="Anzahl erhöhen">+</button>
+            </div>
+          </label>
+
+          <button class="primary-button" type="submit">Sticker speichern</button>
+        </form>
+
+        <form class="batch-form" id="batchForm">
+          <label class="field">
+            <span class="field__label">Batch-Eingabe</span>
+            <textarea id="batchInput" rows="3" placeholder="z. B. GER: 1, 13, 17 oder FWC: 1, 5, 08"></textarea>
+          </label>
+          <button class="secondary-button" type="submit">Batch übernehmen</button>
+          <p class="hint">Format flexibel: Teamname oder Kürzel plus Nummern, getrennt durch Komma oder Leerzeichen. Teamsticker laufen von `1-20`, Intro/Spezial über `FWC`.</p>
+        </form>
+      </section>
+
+      <section class="panel" id="teamsPanel" data-section-panel="teams">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Teamfinder</p>
+            <h2>Team suchen & direkt öffnen</h2>
+          </div>
+        </div>
+
+        <div class="team-search">
+          <label class="field">
+            <span class="field__label">Teamname oder Kürzel</span>
+            <input id="teamQuickSearch" autocomplete="off" placeholder="z. B. Deutschland oder GER">
+          </label>
+        </div>
+
+        <div class="segmented" role="tablist" aria-label="Teamstatus filtern" id="teamStatusFilters">
+          <button class="segmented__item is-active" type="button" data-team-status="all">Alle</button>
+          <button class="segmented__item" type="button" data-team-status="have">Habe ich</button>
+          <button class="segmented__item" type="button" data-team-status="need">Brauche ich</button>
+          <button class="segmented__item" type="button" data-team-status="duplicate">Doppelt</button>
+          <button class="segmented__item" type="button" data-team-status="complete">Komplett</button>
+        </div>
+
+        <p class="hint team-overview__hint" id="teamOverviewSummary">Suche nach einem Team oder filtere nach Status.</p>
+
+        <div class="team-search-results" id="teamSearchResults"></div>
+      </section>
+
+      <section class="panel team-page is-hidden" id="teamPagePanel">
+        <div class="team-detail__header">
+          <button class="ghost-button" id="backToTeamsButton" type="button">Zurück zur Teamliste</button>
+          <div>
+            <p class="team-detail__eyebrow" id="teamDetailGroup">Gruppe</p>
+            <h2 id="teamDetailTitle">Team</h2>
+          </div>
+        </div>
+
+        <div class="team-detail__stats" id="teamDetailStats"></div>
+
+        <div class="segmented" role="tablist" aria-label="Stickerstatus filtern" id="teamStickerFilters">
+          <button class="segmented__item is-active" type="button" data-team-sticker-filter="all">Alle 1-20</button>
+          <button class="segmented__item" type="button" data-team-sticker-filter="owned">Vorhanden</button>
+          <button class="segmented__item" type="button" data-team-sticker-filter="wanted">Gesucht</button>
+          <button class="segmented__item" type="button" data-team-sticker-filter="duplicate">Doppelt</button>
+          <button class="segmented__item" type="button" data-team-sticker-filter="missing">Fehlt</button>
+        </div>
+
+        <p class="hint">Tippe auf einen Sticker: offen → gesucht → vorhanden → doppelt → vorhanden. Doppelt geht nur nach vorhanden.</p>
+        <div class="team-sticker-grid" id="teamStickerGrid"></div>
+      </section>
+
+      <section class="panel" id="collectionPanel" data-section-panel="list">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Deine Liste</p>
+            <h2>Gesucht & doppelt</h2>
+          </div>
+          <div class="view-toggle" role="tablist" aria-label="Ansicht wechseln">
+            <button class="view-toggle__button is-active" type="button" data-view="all">Alles</button>
+            <button class="view-toggle__button" type="button" data-view="wanted">Gesucht</button>
+            <button class="view-toggle__button" type="button" data-view="duplicate">Doppelt</button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <label class="field">
+            <span class="field__label">Suche</span>
+            <input id="searchInput" autocomplete="off" placeholder="Team oder Nummer">
+          </label>
+
+          <label class="field">
+            <span class="field__label">Team filtern</span>
+            <select id="teamFilter"></select>
+          </label>
+        </div>
+
+        <div class="list-meta">
+          <p id="listSummary">Noch keine Sticker eingetragen.</p>
+          <button class="ghost-button" id="shareButton" type="button">Link erzeugen</button>
+        </div>
+
+        <div id="shareBox" class="share-box is-hidden" aria-live="polite">
+          <label class="field">
+            <span class="field__label">Öffentlicher Link</span>
+            <textarea id="shareUrl" rows="3" readonly></textarea>
+          </label>
+          <div class="share-box__actions">
+            <button class="secondary-button" id="copyShareButton" type="button">Link kopieren</button>
+          </div>
+          <p class="hint">Der Link enthält die öffentliche Listenansicht und kann auf jeder statischen Hosting-Lösung genutzt werden.</p>
+        </div>
+
+        <div class="chip-row" id="activeFilters"></div>
+        <div id="listContainer" class="list-grid"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Hauptnavigation">
+      <button class="bottom-nav__item is-active" type="button" data-section-tab="teams">Teams</button>
+      <button class="bottom-nav__item" type="button" data-section-tab="capture">Erfassen</button>
+      <button class="bottom-nav__item" type="button" data-section-tab="list">Liste</button>
+      <button class="bottom-nav__item" id="shareNavButton" type="button">Teilen</button>
+    </nav>
+  </div>
+
+  <template id="teamCardTemplate">
+    <article class="team-card">
+      <div class="team-card__header">
+        <div>
+          <p class="team-card__eyebrow"></p>
+          <h3></h3>
+        </div>
+        <div class="team-card__counts"></div>
+      </div>
+      <div class="team-card__lists"></div>
+    </article>
+  </template>
+
+  <template id="pillTemplate">
+    <span class="sticker-pill"></span>
+  </template>
+
+  <div class="toast" id="toast" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
