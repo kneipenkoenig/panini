@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.2.4";
+const APP_VERSION = "0.2.5";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"] },
@@ -158,6 +158,7 @@ async function init() {
 
   state.isReady = true;
   render();
+  document.body.classList.remove("app-booting");
 }
 
 function renderVersion() {
