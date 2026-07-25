@@ -101,7 +101,6 @@ const elements = {
   copyShareButton: document.querySelector("#copyShareButton"),
   copyWantedButton: document.querySelector("#copyWantedButton"),
   copyDuplicateButton: document.querySelector("#copyDuplicateButton"),
-  topViewButtons: document.querySelectorAll("[data-top-view]"),
   shareBox: document.querySelector("#shareBox"),
   shareUrl: document.querySelector("#shareUrl"),
   listContainer: document.querySelector("#listContainer"),
@@ -151,8 +150,11 @@ async function init() {
     state.shareSlug = shareSlug;
     await loadPublicCollection(shareSlug);
   } else {
-    state.authPin = window.localStorage.getItem(PIN_STORAGE_KEY) || "";
-    elements.authPinInput.value = state.authPin;
+    const storedPin = window.localStorage.getItem(PIN_STORAGE_KEY) || "";
+    elements.authPinInput.value = storedPin;
+    if (storedPin) {
+      await authenticateAndLoad(storedPin, true);
+    }
   }
 
   state.isReady = true;
@@ -181,19 +183,6 @@ function wireEvents() {
         state.currentView = "all";
       }
       renderSectionTabs();
-    });
-  });
-
-  elements.topViewButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      const view = button.dataset.topView;
-      if (view === "album") {
-        state.activeSection = "album";
-      } else {
-        state.activeSection = "list";
-        state.currentView = view;
-      }
-      render();
     });
   });
 
@@ -416,16 +405,6 @@ function updateStatusToggle() {
   });
 }
 
-function updateViewToggle() {
-  elements.topViewButtons.forEach(button => {
-    const view = button.dataset.topView;
-    const isActive = view === "album"
-      ? state.activeSection === "album"
-      : state.activeSection === "list" && state.currentView === view;
-    button.classList.toggle("is-active", isActive);
-  });
-}
-
 function updateTeamStatusToggle() {
   elements.teamStatusButtons.forEach(button => {
     button.classList.toggle("is-active", button.dataset.teamStatus === state.teamStatusFilter);
@@ -460,7 +439,6 @@ function renderSectionTabs() {
 function render() {
   renderSectionTabs();
   updateStatusToggle();
-  updateViewToggle();
   updateTeamStatusToggle();
   updateTeamStickerToggle();
   renderMode();
