@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.5.3";
+const APP_VERSION = "0.5.4";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"], flag: "⭐" },
@@ -766,7 +766,7 @@ function matchesTeamStickerFilter(card) {
 }
 
 function upsertSticker(teamId, number, status, quantity) {
-  state.stickers[teamId] ||= {};
+  state.stickers[teamId] = state.stickers[teamId] || {};
   state.stickers[teamId][number] = {
     teamId,
     number,
