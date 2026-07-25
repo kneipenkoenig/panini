@@ -1,66 +1,18 @@
-const CACHE_NAME = "stickertausch-shell-v2";
+// A previous version of this file aggressively cached the app shell and
+// left some visitors stuck on stale HTML/CSS/JS. This version's only job is
+// to remove itself and any of its caches, then let the page reload as a
+// normal, always-fresh network request. Once every client has cycled
+// through this once, a clean caching service worker can be reintroduced.
 
-const SHELL_ASSETS = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/app.js",
-  "/manifest.webmanifest",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/icon-maskable-192.png",
-  "/icons/icon-maskable-512.png",
-  "/icons/apple-touch-icon.png"
-];
-
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(SHELL_ASSETS))
-      .then(() => self.skipWaiting())
-  );
+self.addEventListener("install", () => {
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      ))
+      .then(keys => Promise.all(keys.map(key => caches.delete(key))))
+      .then(() => self.registration.unregister())
       .then(() => self.clients.claim())
-  );
-});
-
-// Network-first for everything in our own origin: an actively-updated app
-// must never get stuck showing stale HTML/CSS/JS just because a previous
-// visit cached it. The cache only exists as an offline fallback.
-self.addEventListener("fetch", event => {
-  const { request } = event;
-  if (request.method !== "GET") {
-    return;
-  }
-
-  const url = new URL(request.url);
-
-  if (url.origin === self.location.origin && url.pathname.startsWith("/api/")) {
-    return;
-  }
-
-  if (url.origin !== self.location.origin && request.mode !== "navigate") {
-    return;
-  }
-
-  const fallbackUrl = request.mode === "navigate" ? "/index.html" : request;
-
-  event.respondWith(
-    fetch(request, { cache: "no-store" })
-      .then(response => {
-        if (response && response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.match(fallbackUrl))
   );
 });
