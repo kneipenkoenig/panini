@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.2.2";
+const APP_VERSION = "0.2.3";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"] },
@@ -83,7 +83,6 @@ const state = {
 
 const elements = {
   modeBadge: document.querySelector("#modeBadge"),
-  heroCopy: document.querySelector("#heroCopy"),
   wantedCount: document.querySelector("#wantedCount"),
   duplicateCount: document.querySelector("#duplicateCount"),
   teamCount: document.querySelector("#teamCount"),
@@ -445,9 +444,6 @@ function renderMode() {
   const editMode = state.mode === "edit";
   const isAuthenticated = canEdit();
   elements.modeBadge.textContent = editMode ? (isAuthenticated ? "Bearbeiten" : "Gesperrt") : "Freigabe";
-  elements.heroCopy.textContent = editMode
-    ? "Pflege deine Sticker mit PIN-Schutz zentral in der Cloud und öffne dieselbe Liste auf Handy und PC."
-    : "Diese Ansicht ist nur zum Anschauen gedacht und zeigt die freigegebene Tauschliste.";
 
   document.querySelector("#capturePanel").style.display = editMode && isAuthenticated ? "" : "none";
   elements.shareButton.style.display = editMode && isAuthenticated ? "" : "none";

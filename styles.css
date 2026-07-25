@@ -58,6 +58,11 @@ body.is-gated {
   overflow: hidden;
 }
 
+body.is-gated .app-shell {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 button,
 input,
 select,
@@ -86,6 +91,7 @@ a {
   padding: 20px;
   background: rgba(242, 237, 226, 0.94);
   backdrop-filter: blur(14px);
+  overflow-y: auto;
 }
 
 .pin-gate.is-visible {
@@ -94,7 +100,7 @@ a {
 
 .pin-gate__card {
   width: min(100%, 420px);
-  padding: 22px;
+  padding: 20px 18px;
   border: 1px solid var(--line);
   border-radius: 24px;
   background: rgba(255, 251, 245, 0.96);
@@ -103,7 +109,8 @@ a {
 
 .pin-gate__title {
   margin-bottom: 8px;
-  font-size: 1.5rem;
+  font-size: 1.1rem;
+  line-height: 1.05;
 }
 
 .hero {
@@ -831,6 +838,20 @@ a:focus {
 }
 
 @media (max-width: 760px) {
+  .pin-gate {
+    align-items: flex-start;
+    padding: 18px 14px;
+  }
+
+  .pin-gate__card {
+    margin-top: 12px;
+    border-radius: 18px;
+  }
+
+  .pin-gate__title {
+    font-size: 0.98rem;
+  }
+
   .facts-grid,
   .capture-form,
   .auth-form {
