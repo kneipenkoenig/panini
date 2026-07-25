@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.4.0";
+const APP_VERSION = "0.5.2";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"], flag: "⭐" },
@@ -73,6 +73,11 @@ const state = {
   stickers: {},
   authPin: "",
   shareSlug: "",
+  ownerName: "",
+  me: null,
+  matches: null,
+  people: null,
+  editingPersonId: null,
   isSaving: false,
   isReady: false
 };
@@ -114,7 +119,19 @@ const elements = {
   authForm: document.querySelector("#authForm"),
   authPinInput: document.querySelector("#authPinInput"),
   authStatus: document.querySelector("#authStatus"),
-  syncStatus: document.querySelector("#syncStatus")
+  syncStatus: document.querySelector("#syncStatus"),
+  meStatus: document.querySelector("#meStatus"),
+  peopleNavButton: document.querySelector("#peopleNavButton"),
+  matchesRefreshButton: document.querySelector("#matchesRefreshButton"),
+  matchesStatus: document.querySelector("#matchesStatus"),
+  matchesCanGet: document.querySelector("#matchesCanGet"),
+  matchesCanGive: document.querySelector("#matchesCanGive"),
+  peopleForm: document.querySelector("#peopleForm"),
+  peopleNameInput: document.querySelector("#peopleNameInput"),
+  peoplePinInput: document.querySelector("#peoplePinInput"),
+  peopleRefreshButton: document.querySelector("#peopleRefreshButton"),
+  peopleStatus: document.querySelector("#peopleStatus"),
+  peopleListContainer: document.querySelector("#peopleListContainer")
 };
 
 init().catch(error => {
@@ -165,6 +182,12 @@ function wireEvents() {
         state.currentView = "all";
       }
       renderSectionTabs();
+      if (state.activeSection === "matches" && !state.matches) {
+        loadMatches();
+      }
+      if (state.activeSection === "people" && !state.people) {
+        loadPeople();
+      }
     });
   });
 
@@ -252,6 +275,19 @@ function wireEvents() {
       }
     });
   });
+
+  elements.matchesRefreshButton.addEventListener("click", () => {
+    loadMatches();
+  });
+
+  elements.peopleRefreshButton.addEventListener("click", () => {
+    loadPeople();
+  });
+
+  elements.peopleForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    await createPersonRequest();
+  });
 }
 
 async function authenticateAndLoad(pin, silent) {
@@ -280,6 +316,9 @@ async function authenticateAndLoad(pin, silent) {
     state.authPin = pin;
     state.stickers = payload.stickers || {};
     state.shareSlug = payload.shareSlug || "";
+    state.me = payload.me || null;
+    state.matches = null;
+    state.people = null;
     window.localStorage.setItem(PIN_STORAGE_KEY, pin);
     updateSyncStatus("Sammlung geladen und bereit.");
     render();
@@ -289,6 +328,7 @@ async function authenticateAndLoad(pin, silent) {
   } catch (error) {
     state.authPin = "";
     state.stickers = {};
+    state.me = null;
     window.localStorage.removeItem(PIN_STORAGE_KEY);
     updateSyncStatus(error.message || "Verbindung fehlgeschlagen.");
     render();
@@ -306,7 +346,8 @@ async function loadPublicCollection(shareSlug) {
     throw new Error(payload.error || "Freigabe konnte nicht geladen werden.");
   }
   state.stickers = payload.stickers || {};
-  updateSyncStatus("Öffentliche Liste geladen.");
+  state.ownerName = payload.ownerName || "";
+  updateSyncStatus(state.ownerName ? `Öffentliche Liste von ${state.ownerName} geladen.` : "Öffentliche Liste geladen.");
 }
 
 function updateTeamStickerToggle() {
@@ -337,6 +378,8 @@ function render() {
   renderSummary();
   renderTeamOverview();
   renderList();
+  renderMatches();
+  renderPeople();
 }
 
 function renderMode() {
@@ -346,10 +389,14 @@ function renderMode() {
   elements.shareButton.style.display = editMode && isAuthenticated ? "" : "none";
   elements.authStatus.textContent = isAuthenticated
     ? "Bearbeitung entsperrt."
-    : "Zum Bearbeiten bitte deine PIN eingeben.";
+    : "Zum Bearbeiten bitte deine persönliche PIN eingeben.";
   const showGate = editMode && !isAuthenticated;
   elements.pinGate.classList.toggle("is-visible", showGate);
   document.body.classList.toggle("is-gated", showGate);
+
+  elements.meStatus.textContent = state.me ? `Angemeldet als ${state.me.name}` : "";
+  elements.peopleNavButton.classList.toggle("is-hidden", !state.me?.isAdmin);
+
   renderSectionTabs();
 }
 
@@ -370,7 +417,8 @@ function renderSummary() {
 
 function renderTeamOverview() {
   const overview = buildTeamOverviewData()
-    .filter(matchesTeamSearch);
+    .filter(matchesTeamSearch)
+    .sort((a, b) => a.label.localeCompare(b.label, "de"));
   const selectedTeam = state.filterTeam !== "all" ? teamLabel(state.filterTeam) : "kein Team";
   elements.teamOverviewSummary.textContent = overview.length
     ? `${overview.length} Teams in dieser Ansicht. Ausgewählt: ${selectedTeam}.`
@@ -637,8 +685,7 @@ function buildStickerCard(team, number) {
     teamId: team.id,
     number,
     status,
-    quantity: entry?.quantity || 0,
-    role: stickerRole(team.id, number)
+    quantity: entry?.quantity || 0
   };
 }
 
@@ -655,7 +702,6 @@ function renderTeamStickerCard(card) {
         <div class="team-sticker-card__number">${card.number}</div>
         ${card.status !== "missing" ? `<button class="team-sticker-card__reset" type="button" data-reset-sticker="true" data-team-id="${card.teamId}" data-number="${card.number}" aria-label="Sticker zurücksetzen">×</button>` : ""}
       </div>
-      <div class="team-sticker-card__role">${card.role}</div>
       <div class="team-sticker-card__meta">
         <span class="mini-pill mini-pill--${card.status === "missing" ? "need" : card.status === "owned" ? "have" : card.status}">${statusLabel}</span>
       </div>
@@ -808,8 +854,236 @@ function canEdit() {
 
 function authHeaders(pin) {
   return {
-    "X-Admin-Pin": pin
+    "X-Person-Pin": pin
   };
+}
+
+async function loadMatches() {
+  if (!canEdit()) {
+    return;
+  }
+  elements.matchesStatus.textContent = "Lade Abgleich …";
+  try {
+    const response = await fetch("/api/matches", { headers: authHeaders(state.authPin) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Abgleich konnte nicht geladen werden.");
+    }
+    state.matches = { canGet: payload.canGet || [], canGive: payload.canGive || [] };
+    renderMatches();
+  } catch (error) {
+    elements.matchesStatus.textContent = error.message || "Abgleich konnte nicht geladen werden.";
+  }
+}
+
+function renderMatches() {
+  if (!state.matches) {
+    elements.matchesCanGet.innerHTML = "";
+    elements.matchesCanGive.innerHTML = "";
+    return;
+  }
+
+  const { canGet, canGive } = state.matches;
+
+  elements.matchesStatus.textContent = canGet.length || canGive.length
+    ? `${canGet.length} Sticker für dich, ${canGive.length} Sticker kannst du abgeben.`
+    : "Aktuell gibt es keine Treffer zwischen den Sammlungen.";
+
+  elements.matchesCanGet.innerHTML = canGet.length
+    ? canGet.map(item => buildMatchRow(item, `von ${escapeHtml(item.fromName)}`)).join("")
+    : '<div class="empty-state">Niemand hat gerade einen doppelten Sticker, den du suchst.</div>';
+
+  elements.matchesCanGive.innerHTML = canGive.length
+    ? canGive.map(item => buildMatchRow(item, `gesucht von ${item.wantedBy.map(person => escapeHtml(person.name)).join(", ")}`)).join("")
+    : '<div class="empty-state">Aktuell sucht niemand einen deiner doppelten Sticker.</div>';
+}
+
+function buildMatchRow(item, whoText) {
+  return `
+    <div class="match-row">
+      <span class="sticker-pill sticker-pill--duplicate">${teamLabel(item.teamId)} ${item.number}${item.quantity > 1 ? ` x${item.quantity}` : ""}</span>
+      <span class="match-row__who">${whoText}</span>
+    </div>
+  `;
+}
+
+async function loadPeople() {
+  if (!state.me?.isAdmin) {
+    return;
+  }
+  elements.peopleStatus.textContent = "Lade Personen …";
+  try {
+    const response = await fetch("/api/people", { headers: authHeaders(state.authPin) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Personen konnten nicht geladen werden.");
+    }
+    state.people = payload.people || [];
+    renderPeople();
+  } catch (error) {
+    elements.peopleStatus.textContent = error.message || "Personen konnten nicht geladen werden.";
+  }
+}
+
+function renderPeople() {
+  if (!state.people) {
+    elements.peopleListContainer.innerHTML = "";
+    return;
+  }
+
+  elements.peopleStatus.textContent = `${state.people.length}/10 Personen.`;
+
+  elements.peopleListContainer.innerHTML = state.people.map(person => {
+    if (state.editingPersonId === person.id) {
+      return buildPersonEditRow(person);
+    }
+    return `
+      <div class="people-row" data-person-id="${person.id}">
+        <div class="people-row__meta">
+          <strong>${escapeHtml(person.name)}${person.isAdmin ? " (Admin)" : ""}</strong>
+          <span class="people-row__pin">PIN: ${escapeHtml(person.pin)}</span>
+        </div>
+        <div class="people-row__actions">
+          <button class="ghost-button" type="button" data-edit-person="${person.id}">Bearbeiten</button>
+          ${person.isAdmin ? "" : `<button class="ghost-button" type="button" data-remove-person="${person.id}">Entfernen</button>`}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  elements.peopleListContainer.querySelectorAll("[data-edit-person]").forEach(button => {
+    button.addEventListener("click", () => {
+      state.editingPersonId = button.dataset.editPerson;
+      renderPeople();
+    });
+  });
+
+  elements.peopleListContainer.querySelectorAll("[data-cancel-edit]").forEach(button => {
+    button.addEventListener("click", () => {
+      state.editingPersonId = null;
+      renderPeople();
+    });
+  });
+
+  elements.peopleListContainer.querySelectorAll("[data-save-person]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.savePerson;
+      const row = button.closest("[data-person-id]");
+      const name = row.querySelector(".people-edit-name").value.trim();
+      const pinInput = row.querySelector(".people-edit-pin");
+      const pin = pinInput.disabled ? "" : pinInput.value.trim();
+      await updatePersonRequest(id, name, pin);
+    });
+  });
+
+  elements.peopleListContainer.querySelectorAll("[data-remove-person]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.removePerson;
+      const person = state.people.find(entry => entry.id === id);
+      if (!window.confirm(`${person?.name || "Person"} wirklich entfernen? Ihre Sammlung geht dabei verloren.`)) {
+        return;
+      }
+      await deletePersonRequest(id);
+    });
+  });
+}
+
+function buildPersonEditRow(person) {
+  return `
+    <div class="people-row people-row--editing" data-person-id="${person.id}">
+      <div class="people-row__edit-fields">
+        <label class="field">
+          <span class="field__label">Name</span>
+          <input class="people-edit-name" type="text" value="${escapeHtml(person.name)}" maxlength="40">
+        </label>
+        <label class="field">
+          <span class="field__label">PIN</span>
+          <input class="people-edit-pin" type="text" inputmode="numeric" value="${person.isAdmin ? "" : escapeHtml(person.pin)}" maxlength="12" placeholder="${person.isAdmin ? "über ADMIN_PIN gesetzt" : ""}" ${person.isAdmin ? "disabled" : ""}>
+        </label>
+      </div>
+      <div class="people-row__actions">
+        <button class="secondary-button" type="button" data-save-person="${person.id}">Speichern</button>
+        <button class="ghost-button" type="button" data-cancel-edit="${person.id}">Abbrechen</button>
+      </div>
+    </div>
+  `;
+}
+
+async function createPersonRequest() {
+  const name = elements.peopleNameInput.value.trim();
+  const pin = elements.peoplePinInput.value.trim();
+  if (!name || !pin) {
+    showToast("Bitte Name und PIN eingeben.");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/people", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(state.authPin)
+      },
+      body: JSON.stringify({ name, pin })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Person konnte nicht angelegt werden.");
+    }
+    elements.peopleForm.reset();
+    showToast(`${name} wurde hinzugefügt.`);
+    await loadPeople();
+  } catch (error) {
+    showToast(error.message || "Person konnte nicht angelegt werden.");
+  }
+}
+
+async function updatePersonRequest(id, name, pin) {
+  if (!name && !pin) {
+    showToast("Bitte Name oder PIN ändern.");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/people", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(state.authPin)
+      },
+      body: JSON.stringify({ id, name, pin })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Person konnte nicht aktualisiert werden.");
+    }
+    if (id === state.me?.id && name) {
+      state.me = { ...state.me, name };
+    }
+    state.editingPersonId = null;
+    showToast("Person aktualisiert.");
+    await loadPeople();
+    render();
+  } catch (error) {
+    showToast(error.message || "Person konnte nicht aktualisiert werden.");
+  }
+}
+
+async function deletePersonRequest(id) {
+  try {
+    const response = await fetch(`/api/people?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: authHeaders(state.authPin)
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Person konnte nicht entfernt werden.");
+    }
+    showToast("Person entfernt.");
+    await loadPeople();
+  } catch (error) {
+    showToast(error.message || "Person konnte nicht entfernt werden.");
+  }
 }
 
 function nextStickerState(teamId, number) {
@@ -836,6 +1110,16 @@ function openTeam(teamId) {
   render();
 }
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[char]));
+}
+
 function sortByNumber(a, b) {
   return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10);
 }
@@ -848,34 +1132,6 @@ function completionTint(ratio) {
 
 function teamLabel(teamId) {
   return TEAMS.find(team => team.id === teamId)?.label || teamId;
-}
-
-function stickerRole(teamId, number) {
-  if (teamId === "fwc") {
-    const specialMap = {
-      "1": "Trophäe / Turniermotiv",
-      "2": "Offizielles Turnierlogo",
-      "3": "Maskottchen",
-      "4": "Slogan We Are 26",
-      "5": "Spielball",
-      "6": "Host Kanada",
-      "7": "Host Mexiko",
-      "8": "Host USA"
-    };
-    return specialMap[number] || "Historie & Legenden";
-  }
-
-  const numeric = Number.parseInt(number, 10);
-  if (numeric === 1) {
-    return "Wappen";
-  }
-  if (numeric >= 2 && numeric <= 12) {
-    return "Torhüter & Abwehr";
-  }
-  if (numeric === 13) {
-    return "Teamfoto";
-  }
-  return "Mittelfeld & Sturm";
 }
 
 function statusText(status) {

@@ -30,20 +30,20 @@
       </div>
       <div class="pin-gate__meta">
         <p class="eyebrow">StickerTausch 2026</p>
-        <span class="version-badge">v0.3.0</span>
+        <span class="version-badge">v0.5.2</span>
       </div>
       <h1 class="pin-gate__title">Sammlung<br>entsperren</h1>
-      <p class="hint">Bitte gib deine PIN ein, um die gemeinsame Liste zu öffnen.</p>
+      <p class="hint">Bitte gib deine persönliche PIN ein, um deine Sammlung zu öffnen.</p>
       <form class="auth-form auth-form--gate" id="authForm">
         <label class="field">
-          <span class="field__label">Bearbeitungs-PIN</span>
+          <span class="field__label">Persönliche PIN</span>
           <input id="authPinInput" class="pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="• • • •" maxlength="12">
         </label>
         <button class="primary-button" type="submit">
           <span>Öffnen</span>
         </button>
       </form>
-      <p class="hint" id="authStatus">Zum Bearbeiten bitte deine PIN eingeben.</p>
+      <p class="hint" id="authStatus">Zum Bearbeiten bitte deine persönliche PIN eingeben.</p>
     </div>
   </div>
 
@@ -66,6 +66,7 @@
     </header>
 
     <p class="sync-status" id="syncStatus">Warte auf Verbindung …</p>
+    <p class="hint" id="meStatus"></p>
 
     <main class="content">
       <section class="panel panel--facts" data-section-panel="album">
@@ -207,14 +208,76 @@
         <div class="chip-row" id="activeFilters"></div>
         <div id="listContainer" class="list-grid"></div>
       </section>
+
+      <section class="panel" id="matchesPanel" data-section-panel="matches">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Tauschbörse</p>
+            <h2>Wer hat, was du suchst?</h2>
+          </div>
+          <button class="ghost-button" id="matchesRefreshButton" type="button">Aktualisieren</button>
+        </div>
+        <p class="hint" id="matchesStatus">Tippe auf „Aktualisieren“, um den Abgleich über alle Personen zu laden.</p>
+
+        <div class="list-grid" style="margin-top: 18px;">
+          <article class="team-card">
+            <div class="team-card__header">
+              <div>
+                <p class="team-card__eyebrow">Für dich</p>
+                <h3>Das bekommst du</h3>
+              </div>
+            </div>
+            <div id="matchesCanGet" class="team-card__lists"></div>
+          </article>
+
+          <article class="team-card">
+            <div class="team-card__header">
+              <div>
+                <p class="team-card__eyebrow">Von dir</p>
+                <h3>Das kannst du abgeben</h3>
+              </div>
+            </div>
+            <div id="matchesCanGive" class="team-card__lists"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="peoplePanel" data-section-panel="people">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Verwaltung</p>
+            <h2>Personen</h2>
+          </div>
+          <button class="ghost-button" id="peopleRefreshButton" type="button">Aktualisieren</button>
+        </div>
+        <p class="hint" id="peopleStatus">Bis zu 10 Personen können mit eigener PIN mitmachen.</p>
+
+        <form class="auth-form" id="peopleForm">
+          <label class="field">
+            <span class="field__label">Name</span>
+            <input id="peopleNameInput" autocomplete="off" placeholder="z. B. Lisa" maxlength="40">
+          </label>
+          <label class="field">
+            <span class="field__label">Persönliche PIN</span>
+            <input id="peoplePinInput" autocomplete="off" inputmode="numeric" placeholder="z. B. 4821" maxlength="12">
+          </label>
+          <button class="primary-button" type="submit">
+            <span>Person hinzufügen</span>
+          </button>
+        </form>
+
+        <div id="peopleListContainer" class="list-grid" style="margin-top: 18px;"></div>
+      </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <button class="bottom-nav__item is-active" type="button" data-section-tab="teams">Teams</button>
       <button class="bottom-nav__item" type="button" data-section-tab="list">Liste</button>
+      <button class="bottom-nav__item" type="button" data-section-tab="matches">Tausch</button>
+      <button class="bottom-nav__item is-hidden" type="button" data-section-tab="people" id="peopleNavButton">Personen</button>
     </nav>
 
-    <p class="app-version-note" id="versionNote">Version v0.3.0</p>
+    <p class="app-version-note" id="versionNote">Version v0.5.2</p>
   </div>
 
   <template id="teamCardTemplate">

@@ -900,12 +900,6 @@ a:focus-visible {
   background: rgba(23, 116, 81, 0.1);
 }
 
-.team-sticker-card__role {
-  color: var(--muted);
-  font-size: 0.58rem;
-  line-height: 1.2;
-}
-
 .team-sticker-card__top {
   display: flex;
   align-items: flex-start;
@@ -1071,6 +1065,71 @@ a:focus-visible {
   background: linear-gradient(135deg, var(--primary-bright), var(--primary-dark));
   color: var(--cream);
   box-shadow: 0 8px 18px rgba(201, 79, 36, 0.35);
+}
+
+.bottom-nav__item.is-hidden {
+  display: none;
+}
+
+.match-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 251, 245, 0.9);
+}
+
+.match-row__who {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.people-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 251, 245, 0.9);
+}
+
+.people-row__meta {
+  display: grid;
+  gap: 2px;
+}
+
+.people-row__pin {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+
+.people-row__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.people-row--editing {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.people-row__edit-fields {
+  display: flex;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.people-row__edit-fields .field {
+  flex: 1 1 120px;
+  min-width: 0;
 }
 
 .toast {

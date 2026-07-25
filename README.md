@@ -4,15 +4,16 @@ Mobile Webapp zum Verwalten von gesuchten und doppelten WM-2026-Stickern mit zen
 
 ## Aktuelle App-Version
 
-- `0.3.0`
+- `0.5.2`
 
 ## Was jetzt funktioniert
 
-- gemeinsame Sammlung für Handy und PC
-- PIN-geschützte Bearbeitungsansicht
+- eigene Sammlung pro Person, geschützt durch persönliche PIN (bis zu 10 Personen)
+- Admin-Bereich ("Personen"-Tab) zum Anlegen, Bearbeiten (Name/PIN) und Entfernen von Personen
+- Tauschbörse ("Tausch"-Tab): zeigt pro Person, wer doppelte Sticker hat, die sie sucht, und wer ihre eigenen Dubletten gebrauchen könnte
 - mobile Einzeleingabe und Batch-Eingabe
 - Filter nach Team und Suche nach Nummer
-- öffentlicher Freigabelink für Tauschpartner
+- öffentlicher Freigabelink pro Person für Tauschpartner außerhalb der Gruppe
 - Speicherung in Cloudflare D1 statt nur im Browser
 - als PWA installierbar (Homescreen-Icon, Offline-Shell, Standalone-Fenster)
 
@@ -25,12 +26,12 @@ Mobile Webapp zum Verwalten von gesuchten und doppelten WM-2026-Stickern mit zen
 - `sw.js` - Service Worker für Offline-App-Shell
 - `icons/` - App-Icons (inkl. maskable-Varianten und Apple-Touch-Icon)
 - `functions/api/*.js` - Cloudflare Pages Functions
-- `db/migrations/0001_init.sql` - D1-Schema
+- `db/migrations/0001_init.sql`, `0002_multi_person.sql` - D1-Schema-Referenz (die eigentliche Migration läuft automatisch bei jedem Request über `functions/api/_lib/db.js`)
 - `.openai/hosting.json` - logische Sites-/D1-Bindings
 
 ## Benötigte Runtime-Variablen
 
-- `ADMIN_PIN` - deine Bearbeitungs-PIN
+- `ADMIN_PIN` - deine persönliche PIN als Admin. Damit kannst du dich einloggen, deine eigene Sammlung pflegen und im "Personen"-Tab weitere Personen (max. 10 insgesamt) mit eigener PIN anlegen oder entfernen. Deren PINs werden in der D1-Datenbank gespeichert, nicht als eigene Runtime-Variable.
 
 ## Cloudflare-Einrichtung
 

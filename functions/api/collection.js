@@ -1,5 +1,5 @@
-import { ensureSchema, getShareSlug, loadStickers, replaceStickers } from "./_lib/db.js";
-import { json, validatePin } from "./_lib/http.js";
+import { ensureSchema, loadStickers, replaceStickers, resolvePerson } from "./_lib/db.js";
+import { json } from "./_lib/http.js";
 
 export async function onRequestOptions() {
   return json({ ok: true });
@@ -7,19 +7,27 @@ export async function onRequestOptions() {
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!validatePin(request, env)) {
+  await ensureSchema(env);
+
+  const person = await resolvePerson(env, request.headers.get("X-Person-Pin") || "");
+  if (!person) {
     return json({ error: "PIN ungültig." }, 401);
   }
 
-  await ensureSchema(env);
-  const stickers = await loadStickers(env, false);
-  const shareSlug = await getShareSlug(env);
-  return json({ stickers, shareSlug });
+  const stickers = await loadStickers(env, person.id, false);
+  return json({
+    stickers,
+    shareSlug: person.shareSlug,
+    me: { id: person.id, name: person.name, isAdmin: person.isAdmin }
+  });
 }
 
 export async function onRequestPut(context) {
   const { request, env } = context;
-  if (!validatePin(request, env)) {
+  await ensureSchema(env);
+
+  const person = await resolvePerson(env, request.headers.get("X-Person-Pin") || "");
+  if (!person) {
     return json({ error: "PIN ungültig." }, 401);
   }
 
@@ -28,8 +36,6 @@ export async function onRequestPut(context) {
     return json({ error: "Ungültige Daten." }, 400);
   }
 
-  await ensureSchema(env);
-  await replaceStickers(env, body.stickers);
-  const shareSlug = await getShareSlug(env);
-  return json({ ok: true, shareSlug });
+  await replaceStickers(env, person.id, body.stickers);
+  return json({ ok: true, shareSlug: person.shareSlug });
 }
