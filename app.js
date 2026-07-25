@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.5.2";
+const APP_VERSION = "0.5.3";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"], flag: "⭐" },
@@ -72,6 +72,7 @@ const state = {
   teamSearchTerm: "",
   stickers: {},
   authPin: "",
+  authError: "",
   shareSlug: "",
   ownerName: "",
   me: null,
@@ -216,6 +217,13 @@ function wireEvents() {
     await authenticateAndLoad(pin, false);
   });
 
+  elements.authPinInput.addEventListener("input", () => {
+    if (state.authError) {
+      state.authError = "";
+      renderMode();
+    }
+  });
+
   elements.searchInput.addEventListener("input", event => {
     state.searchTerm = event.target.value.trim().toLowerCase();
     renderList();
@@ -314,6 +322,7 @@ async function authenticateAndLoad(pin, silent) {
       }
 
     state.authPin = pin;
+    state.authError = "";
     state.stickers = payload.stickers || {};
     state.shareSlug = payload.shareSlug || "";
     state.me = payload.me || null;
@@ -327,6 +336,7 @@ async function authenticateAndLoad(pin, silent) {
     }
   } catch (error) {
     state.authPin = "";
+    state.authError = error.message || "Verbindung fehlgeschlagen.";
     state.stickers = {};
     state.me = null;
     window.localStorage.removeItem(PIN_STORAGE_KEY);
@@ -389,7 +399,8 @@ function renderMode() {
   elements.shareButton.style.display = editMode && isAuthenticated ? "" : "none";
   elements.authStatus.textContent = isAuthenticated
     ? "Bearbeitung entsperrt."
-    : "Zum Bearbeiten bitte deine persönliche PIN eingeben.";
+    : (state.authError || "Zum Bearbeiten bitte deine persönliche PIN eingeben.");
+  elements.authStatus.classList.toggle("auth-status--error", !isAuthenticated && Boolean(state.authError));
   const showGate = editMode && !isAuthenticated;
   elements.pinGate.classList.toggle("is-visible", showGate);
   document.body.classList.toggle("is-gated", showGate);
