@@ -107,53 +107,29 @@ a {
 }
 
 .hero {
-  position: relative;
-  overflow: hidden;
-  padding: 12px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, rgba(24, 50, 39, 0.98), rgba(18, 32, 25, 0.92));
-  color: #fff9f1;
-  box-shadow: var(--shadow);
-}
-
-.hero__glow {
-  position: absolute;
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
-  filter: blur(10px);
-  opacity: 0.65;
-}
-
-.hero__glow--left {
-  top: -80px;
-  left: -40px;
-  background: rgba(201, 79, 36, 0.42);
-}
-
-.hero__glow--right {
-  right: -40px;
-  bottom: -90px;
-  background: rgba(31, 122, 90, 0.45);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
 }
 
 .eyebrow,
 .panel__eyebrow,
 .team-card__eyebrow {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 0.68rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  opacity: 0.78;
+  opacity: 0.72;
 }
 
 .hero__topline {
-  position: relative;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  margin-bottom: 8px;
 }
 
 h1,
@@ -172,25 +148,16 @@ h3 {
   font-size: 1.2rem;
 }
 
-.hero__copy {
-  display: none;
-}
-
 .sync-status {
-  position: relative;
-  z-index: 1;
-  margin-top: 8px;
+  margin-top: 2px;
   font-size: 0.78rem;
-  color: rgba(255, 249, 241, 0.84);
+  color: var(--muted);
 }
 
 .hero__stats {
-  position: relative;
-  z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 6px;
 }
 
 .stat-card,
@@ -203,14 +170,14 @@ h3 {
 .stat-card {
   padding: 8px 10px;
   border-radius: 14px;
-  background: rgba(255, 248, 238, 0.08);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 251, 245, 0.84);
+  box-shadow: 0 8px 20px rgba(36, 42, 35, 0.07);
 }
 
 .stat-card__label {
   display: block;
   font-size: 0.68rem;
-  color: rgba(255, 249, 241, 0.72);
+  color: var(--muted);
 }
 
 .stat-card__value {
@@ -235,8 +202,8 @@ h3 {
 .badge {
   min-height: 30px;
   padding: 5px 10px;
-  background: rgba(255, 249, 241, 0.12);
-  color: #fff7ef;
+  background: rgba(24, 33, 28, 0.08);
+  color: var(--text);
 }
 
 .hero__meta {
@@ -249,9 +216,9 @@ h3 {
 .version-badge {
   min-height: 26px;
   padding: 4px 9px;
-  background: rgba(255, 249, 241, 0.08);
-  color: rgba(255, 249, 241, 0.88);
-  border: 1px solid rgba(255, 249, 241, 0.18);
+  background: rgba(24, 33, 28, 0.06);
+  color: var(--muted);
+  border: 1px solid rgba(24, 33, 28, 0.1);
   font-size: 0.72rem;
 }
 
