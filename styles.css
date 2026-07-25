@@ -731,11 +731,30 @@ a:focus-visible {
   background: rgba(255, 251, 245, 0.92);
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.team-tile::before {
+  content: attr(data-flag);
+  position: absolute;
+  right: -4px;
+  bottom: -10px;
+  font-size: 2.4rem;
+  line-height: 1;
+  opacity: 0.2;
+  pointer-events: none;
 }
 
 .team-tile:hover {
   transform: translateY(-2px);
+}
+
+.team-tile__code,
+.team-tile__name,
+.team-tile__stats {
+  position: relative;
+  z-index: 1;
 }
 
 .team-tile__code {
@@ -763,6 +782,7 @@ a:focus-visible {
 
 .team-tile__badge {
   position: absolute;
+  z-index: 2;
   top: 6px;
   right: 6px;
   min-width: 18px;
