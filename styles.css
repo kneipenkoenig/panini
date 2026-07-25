@@ -522,12 +522,15 @@ a:focus-visible {
   gap: 6px;
 }
 
-.segmented--fit .segmented__item {
+.segmented--fit .segmented__item,
+.segmented--fit .copy-button {
   flex: 1 1 0;
-  padding-left: 6px;
-  padding-right: 6px;
-  font-size: 0.78rem;
+  min-width: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+  font-size: 0.76rem;
   text-align: center;
+  justify-content: center;
 }
 
 .segmented__item,
@@ -822,8 +825,31 @@ a:focus-visible {
 }
 
 .team-detail__header {
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-button-ghost {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(24, 33, 28, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.icon-button-ghost:hover {
+  background: rgba(24, 33, 28, 0.1);
+  transform: translateX(-1px);
+}
+
+.icon-button-ghost:active {
+  transform: scale(0.94);
 }
 
 .team-detail__stats {
@@ -832,15 +858,13 @@ a:focus-visible {
 
 .team-copy-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   margin-top: 12px;
 }
 
 .copy-button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .copy-icon {
@@ -1116,7 +1140,6 @@ a:focus-visible {
   .panel__header,
   .list-meta,
   .team-card__header,
-  .team-detail__header,
   .team-search-result {
     align-items: flex-start;
     flex-direction: column;

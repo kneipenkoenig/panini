@@ -107,14 +107,7 @@
           </label>
         </div>
 
-        <div class="segmented segmented--fit" role="tablist" aria-label="Teamstatus filtern" id="teamStatusFilters">
-          <button class="segmented__item is-active" type="button" data-team-status="all">Alle</button>
-          <button class="segmented__item" type="button" data-team-status="have">Habe ich</button>
-          <button class="segmented__item" type="button" data-team-status="need">Brauche ich</button>
-          <button class="segmented__item" type="button" data-team-status="duplicate">Doppelt</button>
-        </div>
-
-        <p class="hint team-overview__hint" id="teamOverviewSummary">Suche nach einem Team oder filtere nach Status.</p>
+        <p class="hint team-overview__hint" id="teamOverviewSummary">Suche nach einem Team oder tippe eine Kachel an.</p>
 
         <div class="team-tile-grid" id="teamOverviewGrid"></div>
         <div class="team-search-results" id="teamSearchResults"></div>
@@ -122,7 +115,11 @@
 
       <section class="panel team-page is-hidden" id="teamPagePanel">
         <div class="team-detail__header">
-          <button class="ghost-button" id="backToTeamsButton" type="button">Zurück zur Teamliste</button>
+          <button class="icon-button-ghost" id="backToTeamsButton" type="button" aria-label="Zurück zur Teamliste" title="Zurück zur Teamliste">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <div>
             <p class="team-detail__eyebrow" id="teamDetailGroup">Gruppe</p>
             <h2 id="teamDetailTitle">Team</h2>
@@ -131,7 +128,7 @@
 
         <div class="team-detail__stats" id="teamDetailStats"></div>
 
-        <div class="team-copy-actions">
+        <div class="team-copy-actions segmented--fit">
           <button class="secondary-button copy-button" id="teamCopyWantedButton" type="button">
             <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
@@ -151,18 +148,18 @@
               <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
               <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <span>Fehlende &amp; Doppelte</span>
+            <span>Beides</span>
           </button>
         </div>
 
-        <div class="segmented" role="tablist" aria-label="Stickerstatus filtern" id="teamStickerFilters">
-          <button class="segmented__item is-active" type="button" data-team-sticker-filter="all">Alle 1-20</button>
+        <div class="segmented segmented--fit" role="tablist" aria-label="Stickerstatus filtern" id="teamStickerFilters">
+          <button class="segmented__item is-active" type="button" data-team-sticker-filter="all">Alle</button>
           <button class="segmented__item" type="button" data-team-sticker-filter="owned">Vorhanden</button>
           <button class="segmented__item" type="button" data-team-sticker-filter="duplicate">Doppelt</button>
           <button class="segmented__item" type="button" data-team-sticker-filter="missing">Offen</button>
         </div>
 
-        <p class="hint">Tippe auf einen Sticker: offen → vorhanden → doppelt → vorhanden. Offen bedeutet automatisch benötigt.</p>
+        <p class="hint">Tippe: offen → vorhanden → doppelt → vorhanden.</p>
         <div class="team-sticker-grid" id="teamStickerGrid"></div>
       </section>
 

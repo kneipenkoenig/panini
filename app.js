@@ -67,7 +67,6 @@ const state = {
   activeSection: "teams",
   currentView: "all",
   filterTeam: "all",
-  teamStatusFilter: "all",
   teamStickerFilter: "all",
   searchTerm: "",
   teamSearchTerm: "",
@@ -99,7 +98,6 @@ const elements = {
   pillTemplate: document.querySelector("#pillTemplate"),
   teamOverviewGrid: document.querySelector("#teamOverviewGrid"),
   teamOverviewSummary: document.querySelector("#teamOverviewSummary"),
-  teamStatusButtons: document.querySelectorAll("[data-team-status]"),
   teamQuickSearch: document.querySelector("#teamQuickSearch"),
   teamSearchResults: document.querySelector("#teamSearchResults"),
   teamPagePanel: document.querySelector("#teamPagePanel"),
@@ -167,13 +165,6 @@ function wireEvents() {
         state.currentView = "all";
       }
       renderSectionTabs();
-    });
-  });
-
-  elements.teamStatusButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      state.teamStatusFilter = button.dataset.teamStatus;
-      render();
     });
   });
 
@@ -318,12 +309,6 @@ async function loadPublicCollection(shareSlug) {
   updateSyncStatus("Öffentliche Liste geladen.");
 }
 
-function updateTeamStatusToggle() {
-  elements.teamStatusButtons.forEach(button => {
-    button.classList.toggle("is-active", button.dataset.teamStatus === state.teamStatusFilter);
-  });
-}
-
 function updateTeamStickerToggle() {
   elements.teamStickerButtons.forEach(button => {
     button.classList.toggle("is-active", button.dataset.teamStickerFilter === state.teamStickerFilter);
@@ -347,7 +332,6 @@ function renderSectionTabs() {
 
 function render() {
   renderSectionTabs();
-  updateTeamStatusToggle();
   updateTeamStickerToggle();
   renderMode();
   renderSummary();
@@ -386,7 +370,6 @@ function renderSummary() {
 
 function renderTeamOverview() {
   const overview = buildTeamOverviewData()
-    .filter(matchesTeamStatusFilter)
     .filter(matchesTeamSearch);
   const selectedTeam = state.filterTeam !== "all" ? teamLabel(state.filterTeam) : "kein Team";
   elements.teamOverviewSummary.textContent = overview.length
@@ -564,9 +547,6 @@ function renderActiveFilters() {
   if (state.searchTerm) {
     chips.push(`Suche: ${state.searchTerm}`);
   }
-  if (state.teamStatusFilter !== "all") {
-    chips.push(`Teamstatus: ${teamStatusLabel(state.teamStatusFilter)}`);
-  }
   if (state.shareSlug && state.mode === "edit") {
     chips.push(`Freigabe: ${state.shareSlug}`);
   }
@@ -708,22 +688,6 @@ function matchesFilter(item) {
   }
   const haystack = `${teamLabel(item.teamId)} ${item.number}`.toLowerCase();
   return haystack.includes(state.searchTerm);
-}
-
-function matchesTeamStatusFilter(team) {
-  if (state.teamStatusFilter === "have") {
-    return team.haveCount > 0;
-  }
-  if (state.teamStatusFilter === "need") {
-    return team.wantedCount > 0 || team.missingCount > 0;
-  }
-  if (state.teamStatusFilter === "duplicate") {
-    return team.duplicateCount > 0;
-  }
-  if (state.teamStatusFilter === "complete") {
-    return team.isComplete;
-  }
-  return true;
 }
 
 function matchesTeamSearch(team) {
@@ -884,16 +848,6 @@ function completionTint(ratio) {
 
 function teamLabel(teamId) {
   return TEAMS.find(team => team.id === teamId)?.label || teamId;
-}
-
-function teamStatusLabel(status) {
-  return {
-    all: "Alle",
-    have: "Habe ich",
-    need: "Brauche ich",
-    duplicate: "Doppelt",
-    complete: "Komplett"
-  }[status] || status;
 }
 
 function stickerRole(teamId, number) {
