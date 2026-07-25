@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.5.5";
+const APP_VERSION = "0.5.6";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"], flag: "⭐" },
@@ -502,7 +502,7 @@ function renderTeamDetail() {
       const next = nextStickerState(teamId, number);
       applyStickerState(teamId, number, next);
       render();
-      await persistCollection(`Sticker ${teamId.toUpperCase()} ${number} ist jetzt ${statusText(next.status)}${next.quantity > 1 ? ` x${next.quantity}` : ""}.`);
+      await persistCollection(`Sticker ${teamId.toUpperCase()} ${number} ist jetzt ${statusText(next.status)}${next.quantity > 2 ? ` x${next.quantity - 1}` : ""}.`);
     });
   });
 
@@ -579,7 +579,7 @@ function buildListGroup(title, items, status) {
   items.forEach(item => {
     const pill = elements.pillTemplate.content.firstElementChild.cloneNode(true);
     pill.classList.add(`sticker-pill--${status}`);
-    pill.textContent = status === "duplicate" ? `${item.number} x${item.quantity}` : item.number;
+    pill.textContent = status === "duplicate" ? `${item.number}${item.quantity > 2 ? ` x${item.quantity - 1}` : ""}` : item.number;
     if (state.mode === "edit" && canEdit()) {
       pill.title = "Tippen zum Entfernen";
       pill.addEventListener("click", async () => {
@@ -622,7 +622,7 @@ function buildWhatsappList(kind) {
       if (!entries.length) {
         return "";
       }
-      const values = entries.map(item => kind === "duplicate" && item.quantity > 1 ? `${item.number}x${item.quantity}` : item.number);
+      const values = entries.map(item => kind === "duplicate" && item.quantity > 2 ? `${item.number}x${item.quantity - 1}` : item.number);
       return `${group.team.id.toUpperCase()} ${values.join(", ")}`;
     })
     .filter(Boolean);
@@ -636,7 +636,7 @@ function buildTeamWhatsappText(teamId, kind = "both") {
   const wanted = cards.filter(card => card.status === "missing").map(card => card.number);
   const duplicate = cards
     .filter(card => card.status === "duplicate")
-    .map(card => card.quantity > 1 ? `${card.number}x${card.quantity}` : card.number);
+    .map(card => card.quantity > 2 ? `${card.number}x${card.quantity - 1}` : card.number);
 
   const lines = [`${team.label} (${team.id.toUpperCase()}):`];
   if (kind === "wanted" || kind === "both") {
@@ -703,7 +703,7 @@ function buildStickerCard(team, number) {
 function renderTeamStickerCard(card) {
   const statusLabel = {
     owned: "Vorhanden",
-    duplicate: `Doppelt${card.quantity > 1 ? ` x${card.quantity}` : ""}`,
+    duplicate: `Doppelt${card.quantity > 2 ? ` x${card.quantity - 1}` : ""}`,
     missing: "Gesucht"
   }[card.status] || card.status;
 
@@ -912,7 +912,7 @@ function renderMatches() {
 function buildMatchRow(item, whoText) {
   return `
     <div class="match-row">
-      <span class="sticker-pill sticker-pill--duplicate">${teamLabel(item.teamId)} ${item.number}${item.quantity > 1 ? ` x${item.quantity}` : ""}</span>
+      <span class="sticker-pill sticker-pill--duplicate">${teamLabel(item.teamId)} ${item.number}${item.quantity > 2 ? ` x${item.quantity - 1}` : ""}</span>
       <span class="match-row__who">${whoText}</span>
     </div>
   `;
