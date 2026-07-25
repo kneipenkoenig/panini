@@ -1,6 +1,6 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.2.7";
+const APP_VERSION = "0.2.8";
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"] },
@@ -504,33 +504,22 @@ function renderTeamOverview() {
     : "Für diesen Filter gibt es aktuell kein Team.";
 
   if (!overview.length) {
+    elements.teamOverviewGrid.innerHTML = "";
     elements.teamSearchResults.innerHTML = '<div class="empty-state">Kein Team passt zu deiner Suche oder dem Filter.</div>';
-    } else {
-      elements.teamSearchResults.innerHTML = "";
-      overview.forEach(team => {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "team-search-result";
-      row.innerHTML = `
-        <div>
-          <div class="team-search-result__code">${team.id.toUpperCase()}</div>
-          <h3>${team.label}</h3>
-        </div>
-          <div class="team-search-result__meta">
-            <span class="team-search-result__group">${team.group || "Spezial"}</span>
-            <span class="mini-pill mini-pill--have">${team.haveCount}/${team.expectedCount}</span>
-            ${team.missingCount ? `<span class="mini-pill mini-pill--need">offen ${team.missingCount}</span>` : ""}
-            ${team.duplicateCount ? `<span class="mini-pill mini-pill--duplicate">doppelt ${team.duplicateCount}</span>` : ""}
-          </div>
-        `;
-      row.addEventListener("click", () => {
-        state.filterTeam = team.id;
-        elements.teamFilter.value = team.id;
-        elements.teamSelect.value = team.id;
-        state.activeSection = "team";
-        render();
-      });
-      elements.teamSearchResults.appendChild(row);
+  } else {
+    elements.teamOverviewGrid.innerHTML = overview.map(team => `
+      <button class="team-tile" type="button" data-team-tile="${team.id}">
+        <span class="team-tile__code">${team.id.toUpperCase()}</span>
+        <span class="team-tile__name">${team.label}</span>
+        <span class="team-tile__stats">${team.haveCount}/${team.expectedCount}</span>
+        ${team.missingCount ? `<span class="team-tile__badge team-tile__badge--need">${team.missingCount}</span>` : ""}
+        ${team.duplicateCount ? `<span class="team-tile__badge team-tile__badge--duplicate">+${team.duplicateCount}</span>` : ""}
+      </button>
+    `).join("");
+
+    elements.teamSearchResults.innerHTML = "";
+    elements.teamOverviewGrid.querySelectorAll("[data-team-tile]").forEach(tile => {
+      tile.addEventListener("click", () => openTeam(tile.dataset.teamTile));
     });
   }
 
@@ -578,10 +567,25 @@ function renderTeamDetail() {
 
       const teamId = cardElement.dataset.teamId;
       const number = cardElement.dataset.number;
-      const nextStatus = nextStickerStatus(teamId, number);
-      applyStickerStatus(teamId, number, nextStatus);
+      const next = nextStickerState(teamId, number);
+      applyStickerState(teamId, number, next);
       render();
-      await persistCollection(`Sticker ${teamId.toUpperCase()} ${number} ist jetzt ${statusText(nextStatus)}.`);
+      await persistCollection(`Sticker ${teamId.toUpperCase()} ${number} ist jetzt ${statusText(next.status)}${next.quantity > 1 ? ` x${next.quantity}` : ""}.`);
+    });
+  });
+
+  elements.teamStickerGrid.querySelectorAll("[data-reset-sticker]").forEach(button => {
+    button.addEventListener("click", async event => {
+      event.stopPropagation();
+      if (!canEdit()) {
+        showToast("Bitte zuerst mit PIN entsperren.");
+        return;
+      }
+      const teamId = button.dataset.teamId;
+      const number = button.dataset.number;
+      removeSticker(teamId, number);
+      render();
+      await persistCollection(`Sticker ${teamId.toUpperCase()} ${number} wieder auf gesucht gesetzt.`);
     });
   });
 }
@@ -715,13 +719,14 @@ function buildTeamOverviewData() {
     const haveCount = ownedEntries.length + duplicateEntries.length;
     const expectedCount = team.id === "fwc" ? 28 : TEAM_STICKER_LIMIT;
     const missingCount = Math.max(0, expectedCount - haveCount);
+    const duplicateCount = duplicateEntries.reduce((total, item) => total + Math.max(1, (item.quantity || 2) - 1), 0);
 
     return {
       ...team,
       expectedCount,
       haveCount,
       wantedCount: missingCount,
-      duplicateCount: duplicateEntries.length,
+      duplicateCount,
       missingCount,
       hasActivity: entries.length > 0,
       isComplete: haveCount >= expectedCount
@@ -753,12 +758,15 @@ function renderTeamStickerCard(card) {
   const statusLabel = {
     owned: "Vorhanden",
     duplicate: `Doppelt${card.quantity > 1 ? ` x${card.quantity}` : ""}`,
-    missing: "Offen"
+    missing: "Gesucht"
   }[card.status] || card.status;
 
   return `
     <article class="team-sticker-card team-sticker-card--${card.status}" data-sticker-card="true" data-team-id="${card.teamId}" data-number="${card.number}">
-      <div class="team-sticker-card__number">${card.number}</div>
+      <div class="team-sticker-card__top">
+        <div class="team-sticker-card__number">${card.number}</div>
+        ${card.status !== "missing" ? `<button class="team-sticker-card__reset" type="button" data-reset-sticker="true" data-team-id="${card.teamId}" data-number="${card.number}" aria-label="Sticker zurücksetzen">×</button>` : ""}
+      </div>
       <div class="team-sticker-card__role">${card.role}</div>
       <div class="team-sticker-card__meta">
         <span class="mini-pill mini-pill--${card.status === "missing" ? "need" : card.status === "owned" ? "have" : card.status}">${statusLabel}</span>
@@ -848,17 +856,12 @@ function removeSticker(teamId, number) {
   }
 }
 
-function applyStickerStatus(teamId, number, status) {
-  if (status === "missing") {
+function applyStickerState(teamId, number, next) {
+  if (next.status === "missing") {
     removeSticker(teamId, number);
     return;
   }
-
-  const previous = state.stickers[teamId]?.[number];
-  const quantity = status === "duplicate"
-    ? Math.max(2, previous?.quantity || 2)
-    : 1;
-  upsertSticker(teamId, number, status, quantity);
+  upsertSticker(teamId, number, next.status, next.quantity);
 }
 
 async function ensureShareLink() {
@@ -982,18 +985,29 @@ function normalizeNumber(value) {
   return String(Number.parseInt(raw, 10));
 }
 
-function nextStickerStatus(teamId, number) {
-  const current = state.stickers[teamId]?.[number]?.status || "missing";
-  if (current === "missing") {
-    return "owned";
+function nextStickerState(teamId, number) {
+  const current = state.stickers[teamId]?.[number];
+  const status = current?.status || "missing";
+  const quantity = current?.quantity || 0;
+
+  if (status === "missing") {
+    return { status: "owned", quantity: 1 };
   }
-  if (current === "owned") {
-    return "duplicate";
+  if (status === "owned") {
+    return { status: "duplicate", quantity: 2 };
   }
-  if (current === "duplicate") {
-    return "owned";
+  if (status === "duplicate") {
+    return { status: "duplicate", quantity: Math.max(3, quantity + 1) };
   }
-  return "wanted";
+  return { status: "owned", quantity: 1 };
+}
+
+function openTeam(teamId) {
+  state.filterTeam = teamId;
+  elements.teamFilter.value = teamId;
+  elements.teamSelect.value = teamId;
+  state.activeSection = "team";
+  render();
 }
 
 function isValidStickerNumber(teamId, number) {
@@ -1058,7 +1072,7 @@ function stickerRole(teamId, number) {
 
 function statusText(status) {
   return {
-    missing: "offen",
+    missing: "gesucht",
     owned: "vorhanden",
     duplicate: "doppelt"
   }[status] || status;

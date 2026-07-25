@@ -569,7 +569,12 @@ a:focus {
 }
 
 .team-search-results {
+  display: none;
+}
+
+.team-tile-grid {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 10px;
 }
@@ -628,6 +633,70 @@ a:focus {
   font-size: 0.74rem;
 }
 
+.team-tile {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding: 9px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 251, 245, 0.92);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.team-tile:hover {
+  transform: translateY(-2px);
+}
+
+.team-tile__code {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+}
+
+.team-tile__name,
+.team-tile__stats {
+  font-size: 0.68rem;
+  line-height: 1.15;
+}
+
+.team-tile__name {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.team-tile__stats {
+  color: var(--muted);
+}
+
+.team-tile__badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.team-tile__badge--need {
+  background: rgba(204, 90, 31, 0.12);
+  color: var(--wanted);
+}
+
+.team-tile__badge--duplicate {
+  background: rgba(23, 116, 81, 0.12);
+  color: var(--duplicate);
+  top: auto;
+  bottom: 6px;
+}
+
 .team-detail {
   display: grid;
   gap: 12px;
@@ -659,8 +728,8 @@ a:focus {
 .team-sticker-card {
   display: grid;
   gap: 5px;
-  padding: 9px 8px;
-  border-radius: 12px;
+  padding: 7px 6px;
+  border-radius: 10px;
   background: rgba(255, 251, 245, 0.92);
   cursor: pointer;
   transition: transform 180ms ease, box-shadow 180ms ease;
@@ -681,18 +750,37 @@ a:focus {
 
 .team-sticker-card__role {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   line-height: 1.2;
+}
+
+.team-sticker-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.team-sticker-card__reset {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(24, 33, 28, 0.08);
+  color: var(--muted);
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .mini-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 22px;
-  padding: 3px 7px;
+  min-height: 18px;
+  padding: 2px 6px;
   border-radius: 999px;
-  font-size: 0.66rem;
+  font-size: 0.56rem;
   font-weight: 800;
 }
 
@@ -961,6 +1049,10 @@ a:focus {
 
   .team-sticker-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .team-tile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
