@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.5.9";
+const APP_VERSION = "0.5.10";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -743,7 +743,7 @@ function buildTeamOverviewData() {
     const duplicateEntries = entries.filter(item => item.status === "duplicate");
     const ownedEntries = entries.filter(item => item.status === "owned");
     const haveCount = ownedEntries.length + duplicateEntries.length;
-    const expectedCount = team.id === "fwc" ? 18 : TEAM_STICKER_LIMIT;
+    const expectedCount = team.id === "fwc" ? 19 : TEAM_STICKER_LIMIT;
     const missingCount = Math.max(0, expectedCount - haveCount);
     const duplicateCount = duplicateEntries.reduce((total, item) => total + Math.max(1, (item.quantity || 2) - 1), 0);
 
@@ -762,7 +762,7 @@ function buildTeamOverviewData() {
 
 function buildTeamStickerCards(team) {
   if (team.id === "fwc") {
-    return Array.from({ length: 18 }, (_, index) => buildStickerCard(team, String(index + 1)));
+    return Array.from({ length: 19 }, (_, index) => buildStickerCard(team, String(index + 1)));
   }
   return Array.from({ length: TEAM_STICKER_LIMIT }, (_, index) => buildStickerCard(team, String(index + 1)));
 }
