@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.5.8";
+const APP_VERSION = "0.5.9";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
