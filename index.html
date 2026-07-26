@@ -30,7 +30,7 @@
       </div>
       <div class="pin-gate__meta">
         <p class="eyebrow">StickerTausch 2026</p>
-        <span class="version-badge">v0.5.11</span>
+        <span class="version-badge">v0.5.12</span>
       </div>
       <h1 class="pin-gate__title">Sammlung<br>entsperren</h1>
       <p class="hint">Bitte gib deine persönliche PIN ein, um deine Sammlung zu öffnen.</p>
@@ -66,7 +66,10 @@
     </header>
 
     <p class="sync-status" id="syncStatus">Warte auf Verbindung …</p>
-    <p class="hint" id="meStatus"></p>
+    <div class="me-status-row">
+      <p class="hint" id="meStatus"></p>
+      <button class="ghost-button is-hidden" id="logoutButton" type="button">Abmelden</button>
+    </div>
 
     <div class="history-strip is-hidden" id="historyStrip">
       <span class="history-strip__log" id="historyLog"></span>
@@ -338,7 +341,7 @@
       <button class="bottom-nav__item is-hidden" type="button" data-section-tab="people" id="peopleNavButton">Personen</button>
     </nav>
 
-    <p class="app-version-note" id="versionNote">Version v0.5.11</p>
+    <p class="app-version-note" id="versionNote">Version v0.5.12</p>
   </div>
 
   <template id="teamCardTemplate">

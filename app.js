@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.5.11";
+const APP_VERSION = "0.5.12";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -128,6 +128,7 @@ const elements = {
   authStatus: document.querySelector("#authStatus"),
   syncStatus: document.querySelector("#syncStatus"),
   meStatus: document.querySelector("#meStatus"),
+  logoutButton: document.querySelector("#logoutButton"),
   historyStrip: document.querySelector("#historyStrip"),
   historyLog: document.querySelector("#historyLog"),
   undoButton: document.querySelector("#undoButton"),
@@ -247,6 +248,10 @@ function wireEvents() {
       state.authError = "";
       renderMode();
     }
+  });
+
+  elements.logoutButton.addEventListener("click", () => {
+    logout();
   });
 
   elements.searchInput.addEventListener("input", event => {
@@ -480,6 +485,7 @@ function renderMode() {
   document.body.classList.toggle("is-gated", showGate);
 
   elements.meStatus.textContent = state.me ? `Angemeldet als ${state.me.name}` : "";
+  elements.logoutButton.classList.toggle("is-hidden", !isAuthenticated);
   elements.peopleNavButton.classList.toggle("is-hidden", !state.me?.isAdmin);
 
   renderSectionTabs();
@@ -976,6 +982,25 @@ async function persistCollection(successMessage) {
     state.isSaving = false;
     render();
   }
+}
+
+function logout() {
+  state.authPin = "";
+  state.authError = "";
+  state.stickers = {};
+  state.me = null;
+  state.matches = null;
+  state.people = null;
+  state.shareSlug = "";
+  state.history = [];
+  state.activeSection = "teams";
+  state.filterTeam = "all";
+  elements.teamFilter.value = "all";
+  elements.authPinInput.value = "";
+  window.localStorage.removeItem(PIN_STORAGE_KEY);
+  updateSyncStatus("Abgemeldet.");
+  render();
+  showToast("Abgemeldet.");
 }
 
 function canEdit() {

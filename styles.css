@@ -326,6 +326,24 @@ h3 {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+.me-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.me-status-row .hint {
+  margin: 0;
+}
+
+.me-status-row .ghost-button {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+}
+
 .history-strip {
   display: flex;
   align-items: center;
