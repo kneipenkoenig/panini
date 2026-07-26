@@ -1,6 +1,8 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
-const APP_VERSION = "0.5.6";
+const TEAM_PARAM = "team";
+const APP_VERSION = "0.5.7";
+const HISTORY_LIMIT = 8;
 
 const TEAMS = [
   { id: "fwc", label: "Sondersticker", group: "Spezial", aliases: ["fwc", "fcw", "sondersticker", "intro", "legenden", "specials", "historie"], flag: "⭐" },
@@ -68,9 +70,11 @@ const state = {
   currentView: "all",
   filterTeam: "all",
   teamStickerFilter: "all",
+  teamSortBy: "label",
   searchTerm: "",
   teamSearchTerm: "",
   stickers: {},
+  history: [],
   authPin: "",
   authError: "",
   shareSlug: "",
@@ -106,6 +110,7 @@ const elements = {
   teamOverviewSummary: document.querySelector("#teamOverviewSummary"),
   teamQuickSearch: document.querySelector("#teamQuickSearch"),
   teamSearchResults: document.querySelector("#teamSearchResults"),
+  teamSortButtons: document.querySelectorAll("[data-team-sort]"),
   teamPagePanel: document.querySelector("#teamPagePanel"),
   teamDetailGroup: document.querySelector("#teamDetailGroup"),
   teamDetailTitle: document.querySelector("#teamDetailTitle"),
@@ -113,6 +118,7 @@ const elements = {
   teamStickerGrid: document.querySelector("#teamStickerGrid"),
   teamStickerButtons: document.querySelectorAll("[data-team-sticker-filter]"),
   backToTeamsButton: document.querySelector("#backToTeamsButton"),
+  teamCopyLinkButton: document.querySelector("#teamCopyLinkButton"),
   teamCopyWantedButton: document.querySelector("#teamCopyWantedButton"),
   teamCopyDuplicateButton: document.querySelector("#teamCopyDuplicateButton"),
   teamCopyBothButton: document.querySelector("#teamCopyBothButton"),
@@ -122,6 +128,12 @@ const elements = {
   authStatus: document.querySelector("#authStatus"),
   syncStatus: document.querySelector("#syncStatus"),
   meStatus: document.querySelector("#meStatus"),
+  historyStrip: document.querySelector("#historyStrip"),
+  historyLog: document.querySelector("#historyLog"),
+  undoButton: document.querySelector("#undoButton"),
+  stickerCheckInput: document.querySelector("#stickerCheckInput"),
+  stickerCheckResult: document.querySelector("#stickerCheckResult"),
+  stickerCheckCopyButton: document.querySelector("#stickerCheckCopyButton"),
   peopleNavButton: document.querySelector("#peopleNavButton"),
   matchesRefreshButton: document.querySelector("#matchesRefreshButton"),
   matchesStatus: document.querySelector("#matchesStatus"),
@@ -153,6 +165,11 @@ async function init() {
     state.mode = "share";
     state.shareSlug = shareSlug;
     await loadPublicCollection(shareSlug);
+    const teamParam = params.get(TEAM_PARAM);
+    if (teamParam && TEAMS.some(team => team.id === teamParam)) {
+      state.filterTeam = teamParam;
+      state.activeSection = "team";
+    }
   } else {
     const storedPin = window.localStorage.getItem(PIN_STORAGE_KEY) || "";
     elements.authPinInput.value = storedPin;
@@ -204,6 +221,14 @@ function wireEvents() {
     renderTeamOverview();
   });
 
+  elements.teamSortButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      state.teamSortBy = button.dataset.teamSort;
+      updateTeamSortToggle();
+      renderTeamOverview();
+    });
+  });
+
   elements.backToTeamsButton.addEventListener("click", () => {
     state.filterTeam = "all";
     state.activeSection = "teams";
@@ -235,7 +260,14 @@ function wireEvents() {
   });
 
   elements.shareButton.addEventListener("click", async () => {
-    await ensureShareLink();
+    const ok = await ensureShareSlug();
+    if (!ok) {
+      return;
+    }
+    elements.shareUrl.value = buildShareUrl();
+    elements.shareBox.classList.remove("is-hidden");
+    elements.shareBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    showToast("Freigabelink bereit.");
   });
 
   elements.copyShareButton.addEventListener("click", async () => {
@@ -282,6 +314,39 @@ function wireEvents() {
         showToast("Liste konnte nicht kopiert werden.");
       }
     });
+  });
+
+  elements.teamCopyLinkButton.addEventListener("click", async () => {
+    if (state.filterTeam === "all") {
+      return;
+    }
+    const ok = await ensureShareSlug();
+    if (!ok) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(buildShareUrl(state.filterTeam));
+      showToast(`Link für ${teamLabel(state.filterTeam)} kopiert.`);
+    } catch (error) {
+      showToast("Link konnte nicht kopiert werden.");
+    }
+  });
+
+  elements.undoButton.addEventListener("click", () => {
+    undoLastAction();
+  });
+
+  elements.stickerCheckInput.addEventListener("input", () => {
+    renderStickerCheck();
+  });
+
+  elements.stickerCheckCopyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(buildStickerCheckResultText());
+      showToast("Ergebnis kopiert.");
+    } catch (error) {
+      showToast("Ergebnis konnte nicht kopiert werden.");
+    }
   });
 
   elements.matchesRefreshButton.addEventListener("click", () => {
@@ -366,6 +431,12 @@ function updateTeamStickerToggle() {
   });
 }
 
+function updateTeamSortToggle() {
+  elements.teamSortButtons.forEach(button => {
+    button.classList.toggle("is-active", button.dataset.teamSort === state.teamSortBy);
+  });
+}
+
 function renderSectionTabs() {
   document.querySelectorAll(".bottom-nav__item").forEach(button => {
     if (!button.dataset.sectionTab) {
@@ -384,10 +455,13 @@ function renderSectionTabs() {
 function render() {
   renderSectionTabs();
   updateTeamStickerToggle();
+  updateTeamSortToggle();
   renderMode();
   renderSummary();
   renderTeamOverview();
   renderList();
+  renderStickerCheck();
+  renderHistory();
   renderMatches();
   renderPeople();
 }
@@ -427,9 +501,7 @@ function renderSummary() {
 }
 
 function renderTeamOverview() {
-  const overview = buildTeamOverviewData()
-    .filter(matchesTeamSearch)
-    .sort((a, b) => a.label.localeCompare(b.label, "de"));
+  const overview = sortTeams(buildTeamOverviewData().filter(matchesTeamSearch));
   const selectedTeam = state.filterTeam !== "all" ? teamLabel(state.filterTeam) : "kein Team";
   elements.teamOverviewSummary.textContent = overview.length
     ? `${overview.length} Teams in dieser Ansicht. Ausgewählt: ${selectedTeam}.`
@@ -499,8 +571,11 @@ function renderTeamDetail() {
 
       const teamId = cardElement.dataset.teamId;
       const number = cardElement.dataset.number;
+      const prevEntry = cloneEntry(state.stickers[teamId]?.[number]);
       const next = nextStickerState(teamId, number);
       applyStickerState(teamId, number, next);
+      const label = `${teamId.toUpperCase()} ${number} → ${statusText(next.status)}${next.quantity > 2 ? ` x${next.quantity - 1}` : ""}`;
+      pushHistory({ teamId, number, prevEntry, label });
       render();
       await persistCollection(`Sticker ${teamId.toUpperCase()} ${number} ist jetzt ${statusText(next.status)}${next.quantity > 2 ? ` x${next.quantity - 1}` : ""}.`);
     });
@@ -515,7 +590,9 @@ function renderTeamDetail() {
       }
       const teamId = button.dataset.teamId;
       const number = button.dataset.number;
+      const prevEntry = cloneEntry(state.stickers[teamId]?.[number]);
       removeSticker(teamId, number);
+      pushHistory({ teamId, number, prevEntry, label: `${teamId.toUpperCase()} ${number} → gesucht` });
       render();
       await persistCollection(`Sticker ${teamId.toUpperCase()} ${number} wieder auf gesucht gesetzt.`);
     });
@@ -583,7 +660,9 @@ function buildListGroup(title, items, status) {
     if (state.mode === "edit" && canEdit()) {
       pill.title = "Tippen zum Entfernen";
       pill.addEventListener("click", async () => {
+        const prevEntry = cloneEntry(state.stickers[item.teamId]?.[item.number]);
         removeSticker(item.teamId, item.number);
+        pushHistory({ teamId: item.teamId, number: item.number, prevEntry, label: `${item.teamId.toUpperCase()} ${item.number} → gesucht` });
         render();
         await persistCollection(`Sticker ${item.number} entfernt.`);
       });
@@ -743,7 +822,7 @@ function matchesFilter(item) {
   if (!state.searchTerm) {
     return true;
   }
-  const haystack = `${teamLabel(item.teamId)} ${item.number}`.toLowerCase();
+  const haystack = `${item.teamId} ${teamLabel(item.teamId)} ${item.number}`.toLowerCase();
   return haystack.includes(state.searchTerm);
 }
 
@@ -793,36 +872,77 @@ function applyStickerState(teamId, number, next) {
   upsertSticker(teamId, number, next.status, next.quantity);
 }
 
-async function ensureShareLink() {
-  if (!canEdit()) {
-    showToast("Bitte zuerst mit PIN entsperren.");
+function cloneEntry(entry) {
+  return entry ? { ...entry } : null;
+}
+
+function pushHistory(entry) {
+  state.history.push(entry);
+  if (state.history.length > HISTORY_LIMIT) {
+    state.history.shift();
+  }
+}
+
+async function undoLastAction() {
+  const entry = state.history.pop();
+  if (!entry) {
     return;
   }
+  if (entry.prevEntry) {
+    state.stickers[entry.teamId] = state.stickers[entry.teamId] || {};
+    state.stickers[entry.teamId][entry.number] = entry.prevEntry;
+  } else {
+    removeSticker(entry.teamId, entry.number);
+  }
+  render();
+  await persistCollection(`Rückgängig: ${entry.teamId.toUpperCase()} ${entry.number}.`);
+}
 
-  if (!state.shareSlug) {
-    const response = await fetch("/api/share", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeaders(state.authPin)
-      }
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      showToast(payload.error || "Freigabelink konnte nicht erstellt werden.");
-      return;
-    }
-    state.shareSlug = payload.shareSlug;
-    render();
+function renderHistory() {
+  const hasHistory = state.history.length > 0 && canEdit();
+  elements.historyStrip.classList.toggle("is-hidden", !hasHistory);
+  if (!hasHistory) {
+    return;
+  }
+  elements.historyLog.textContent = [...state.history].slice(-5).reverse().map(entry => entry.label).join(" · ");
+}
+
+async function ensureShareSlug() {
+  if (!canEdit()) {
+    showToast("Bitte zuerst mit PIN entsperren.");
+    return false;
+  }
+  if (state.shareSlug) {
+    return true;
   }
 
+  const response = await fetch("/api/share", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(state.authPin)
+    }
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    showToast(payload.error || "Freigabelink konnte nicht erstellt werden.");
+    return false;
+  }
+  state.shareSlug = payload.shareSlug;
+  render();
+  return true;
+}
+
+function buildShareUrl(teamId) {
   const url = new URL(window.location.href);
   url.searchParams.set(SHARE_PARAM, state.shareSlug);
+  if (teamId) {
+    url.searchParams.set(TEAM_PARAM, teamId);
+  } else {
+    url.searchParams.delete(TEAM_PARAM);
+  }
   url.hash = "";
-  elements.shareUrl.value = url.toString();
-  elements.shareBox.classList.remove("is-hidden");
-  elements.shareBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  showToast("Freigabelink bereit.");
+  return url.toString();
 }
 
 async function persistCollection(successMessage) {
@@ -1138,7 +1258,21 @@ function sortByNumber(a, b) {
 function completionTint(ratio) {
   const clamped = Math.max(0, Math.min(1, ratio));
   const hue = Math.round(clamped * 120);
-  return `hsla(${hue}, 65%, 45%, 0.22)`;
+  return `hsla(${hue}, 80%, 45%, 0.38)`;
+}
+
+function sortTeams(list) {
+  const sorted = [...list];
+  if (state.teamSortBy === "id") {
+    sorted.sort((a, b) => a.id.localeCompare(b.id, "de"));
+  } else if (state.teamSortBy === "mostOpen") {
+    sorted.sort((a, b) => b.missingCount - a.missingCount || a.label.localeCompare(b.label, "de"));
+  } else if (state.teamSortBy === "leastOpen") {
+    sorted.sort((a, b) => a.missingCount - b.missingCount || a.label.localeCompare(b.label, "de"));
+  } else {
+    sorted.sort((a, b) => a.label.localeCompare(b.label, "de"));
+  }
+  return sorted;
 }
 
 function teamLabel(teamId) {
@@ -1165,6 +1299,101 @@ function buildMissingEntries(team) {
 
 function updateSyncStatus(message) {
   elements.syncStatus.textContent = message;
+}
+
+const TEAM_CODE_LOOKUP = new Map();
+TEAMS.forEach(team => {
+  TEAM_CODE_LOOKUP.set(team.id, team.id);
+  team.aliases.forEach(alias => {
+    if (alias.length <= 4) {
+      TEAM_CODE_LOOKUP.set(alias.toLowerCase(), team.id);
+    }
+  });
+});
+
+function parseStickerRefs(text) {
+  const refs = [];
+  let currentTeam = null;
+
+  text.split(/\n+/).forEach(line => {
+    line.split(/[,;]+/).map(token => token.trim()).filter(Boolean).forEach(token => {
+      token.split(/\s+/).filter(Boolean).forEach(word => {
+        const cleanWord = word.replace(/[():]/g, "");
+        const comboMatch = cleanWord.match(/^([a-zA-ZÀ-ÿ]{2,})[-_]?(\d{1,2})$/);
+        if (comboMatch && TEAM_CODE_LOOKUP.has(comboMatch[1].toLowerCase())) {
+          currentTeam = TEAM_CODE_LOOKUP.get(comboMatch[1].toLowerCase());
+          refs.push({ teamId: currentTeam, number: String(Number.parseInt(comboMatch[2], 10)) });
+          return;
+        }
+
+        const teamId = TEAM_CODE_LOOKUP.get(cleanWord.toLowerCase());
+        if (teamId) {
+          currentTeam = teamId;
+          return;
+        }
+
+        const numberMatch = cleanWord.match(/^(\d{1,2})(?:x\d+)?$/i);
+        if (numberMatch && currentTeam) {
+          refs.push({ teamId: currentTeam, number: String(Number.parseInt(numberMatch[1], 10)) });
+        }
+      });
+    });
+  });
+
+  return refs;
+}
+
+function computeStickerCheckMatches() {
+  const refs = parseStickerRefs(elements.stickerCheckInput.value);
+  const seen = new Set();
+  const needed = [];
+  refs.forEach(ref => {
+    const key = `${ref.teamId}-${ref.number}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    const entry = state.stickers[ref.teamId]?.[ref.number];
+    if (!entry || entry.status === "missing") {
+      needed.push(ref);
+    }
+  });
+  return { total: seen.size, needed };
+}
+
+function groupRefsByTeam(refs) {
+  const grouped = new Map();
+  refs.forEach(ref => {
+    if (!grouped.has(ref.teamId)) {
+      grouped.set(ref.teamId, []);
+    }
+    grouped.get(ref.teamId).push(ref.number);
+  });
+  return [...grouped.entries()].map(([teamId, numbers]) => `${teamId.toUpperCase()} ${numbers.join(", ")}`);
+}
+
+function renderStickerCheck() {
+  if (!elements.stickerCheckInput.value.trim()) {
+    elements.stickerCheckResult.textContent = "Noch keine Liste geprüft.";
+    return;
+  }
+
+  const { total, needed } = computeStickerCheckMatches();
+  if (!total) {
+    elements.stickerCheckResult.textContent = "Keine erkennbaren Team-Kürzel mit Nummern gefunden.";
+  } else if (!needed.length) {
+    elements.stickerCheckResult.textContent = `Von ${total} erkannten Stickern brauchst du keinen davon mehr.`;
+  } else {
+    elements.stickerCheckResult.textContent = `Du brauchst noch ${needed.length} von ${total}:\n${groupRefsByTeam(needed).join("\n")}`;
+  }
+}
+
+function buildStickerCheckResultText() {
+  const { needed } = computeStickerCheckMatches();
+  if (!needed.length) {
+    return "Keine passenden Sticker gefunden.";
+  }
+  return `Ich brauche noch:\n${groupRefsByTeam(needed).join("\n")}`;
 }
 
 function registerServiceWorker() {

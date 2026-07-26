@@ -30,7 +30,7 @@
       </div>
       <div class="pin-gate__meta">
         <p class="eyebrow">StickerTausch 2026</p>
-        <span class="version-badge">v0.5.6</span>
+        <span class="version-badge">v0.5.7</span>
       </div>
       <h1 class="pin-gate__title">Sammlung<br>entsperren</h1>
       <p class="hint">Bitte gib deine persönliche PIN ein, um deine Sammlung zu öffnen.</p>
@@ -67,6 +67,11 @@
 
     <p class="sync-status" id="syncStatus">Warte auf Verbindung …</p>
     <p class="hint" id="meStatus"></p>
+
+    <div class="history-strip is-hidden" id="historyStrip">
+      <span class="history-strip__log" id="historyLog"></span>
+      <button class="ghost-button" id="undoButton" type="button">Rückgängig</button>
+    </div>
 
     <main class="content">
       <section class="panel panel--facts" data-section-panel="album">
@@ -108,6 +113,13 @@
           </label>
         </div>
 
+        <div class="segmented segmented--fit" role="tablist" aria-label="Teams sortieren" id="teamSortFilters">
+          <button class="segmented__item is-active" type="button" data-team-sort="label">Name</button>
+          <button class="segmented__item" type="button" data-team-sort="id">Kürzel</button>
+          <button class="segmented__item" type="button" data-team-sort="mostOpen">Meiste offen</button>
+          <button class="segmented__item" type="button" data-team-sort="leastOpen">Wenigste offen</button>
+        </div>
+
         <p class="hint team-overview__hint" id="teamOverviewSummary">Suche nach einem Team oder tippe eine Kachel an.</p>
 
         <div class="team-tile-grid" id="teamOverviewGrid"></div>
@@ -130,6 +142,13 @@
         <div class="team-detail__stats" id="teamDetailStats"></div>
 
         <div class="team-copy-actions segmented--fit">
+          <button class="ghost-button copy-button" id="teamCopyLinkButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 14a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 10a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1-1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Link</span>
+          </button>
           <button class="secondary-button copy-button" id="teamCopyWantedButton" type="button">
             <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
@@ -186,7 +205,30 @@
 
         <div class="list-meta">
           <p id="listSummary">Noch keine Sticker eingetragen.</p>
-          <button class="ghost-button" id="shareButton" type="button">Link erzeugen</button>
+        </div>
+
+        <div class="list-actions segmented--fit">
+          <button class="ghost-button copy-button" id="shareButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 14a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 10a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1-1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Link</span>
+          </button>
+          <button class="secondary-button copy-button" id="copyWantedButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Gesucht</span>
+          </button>
+          <button class="secondary-button copy-button" id="copyDuplicateButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Doppelte</span>
+          </button>
         </div>
 
         <div id="shareBox" class="share-box is-hidden" aria-live="polite">
@@ -200,13 +242,32 @@
           <p class="hint">Der Link enthält die öffentliche Listenansicht und kann auf jeder statischen Hosting-Lösung genutzt werden.</p>
         </div>
 
-        <div class="export-actions">
-          <button class="secondary-button" id="copyWantedButton" type="button">WhatsApp: Gesucht</button>
-          <button class="secondary-button" id="copyDuplicateButton" type="button">WhatsApp: Doppelte</button>
-        </div>
-
         <div class="chip-row" id="activeFilters"></div>
         <div id="listContainer" class="list-grid"></div>
+      </section>
+
+      <section class="panel" id="stickerCheckPanel" data-section-panel="list">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Werkzeug</p>
+            <h2>Kürzel-Check</h2>
+          </div>
+        </div>
+        <p class="hint">Füge eine kopierte Liste ein (z. B. „GER 5, 7, 12x2“), um zu sehen, was davon du noch brauchst.</p>
+        <label class="field">
+          <span class="field__label">Eingefügte Liste</span>
+          <textarea id="stickerCheckInput" rows="4" placeholder="z. B. GER 5, 7, 12x2&#10;BRA 3, 20"></textarea>
+        </label>
+        <div class="list-actions segmented--fit">
+          <button class="secondary-button copy-button" id="stickerCheckCopyButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Ergebnis kopieren</span>
+          </button>
+        </div>
+        <p class="hint" id="stickerCheckResult">Noch keine Liste geprüft.</p>
       </section>
 
       <section class="panel" id="matchesPanel" data-section-panel="matches">
@@ -277,7 +338,7 @@
       <button class="bottom-nav__item is-hidden" type="button" data-section-tab="people" id="peopleNavButton">Personen</button>
     </nav>
 
-    <p class="app-version-note" id="versionNote">Version v0.5.6</p>
+    <p class="app-version-note" id="versionNote">Version v0.5.7</p>
   </div>
 
   <template id="teamCardTemplate">
