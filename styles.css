@@ -795,6 +795,10 @@ a:focus-visible {
   transform: translateY(-2px);
 }
 
+.team-tile--special {
+  border: 1.5px solid rgba(201, 79, 36, 0.45);
+}
+
 .team-tile__code,
 .team-tile__name,
 .team-tile__stats {

@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.5.10";
+const APP_VERSION = "0.5.11";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -512,7 +512,7 @@ function renderTeamOverview() {
     elements.teamSearchResults.innerHTML = '<div class="empty-state">Kein Team passt zu deiner Suche oder dem Filter.</div>';
   } else {
     elements.teamOverviewGrid.innerHTML = overview.map(team => `
-      <button class="team-tile" type="button" data-team-tile="${team.id}" data-flag="${team.flag}" style="background-color: ${completionTint(team.haveCount / team.expectedCount)};">
+      <button class="team-tile${team.id === "fwc" ? " team-tile--special" : ""}" type="button" data-team-tile="${team.id}" data-flag="${team.flag}" style="background-color: ${completionTint(team.haveCount / team.expectedCount)};">
         <span class="team-tile__code">${team.id.toUpperCase()}</span>
         <span class="team-tile__name">${team.label}</span>
         <span class="team-tile__stats">${team.haveCount}/${team.expectedCount}</span>
