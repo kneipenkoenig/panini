@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.6.0";
+const APP_VERSION = "0.6.1";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -105,7 +105,7 @@ const elements = {
   listPanelEyebrow: document.querySelector("#listPanelEyebrow"),
   listPanelTitle: document.querySelector("#listPanelTitle"),
   shareIntro: document.querySelector("#shareIntro"),
-  shareTabs: document.querySelector("#shareTabs"),
+  shareBottomNav: document.querySelector("#shareBottomNav"),
   shareTabButtons: document.querySelectorAll("[data-share-tab]"),
   activeFilters: document.querySelector("#activeFilters"),
   toast: document.querySelector("#toast"),
@@ -275,7 +275,8 @@ function wireEvents() {
   elements.shareTabButtons.forEach(button => {
     button.addEventListener("click", () => {
       state.currentView = button.dataset.shareTab;
-      elements.shareTabButtons.forEach(btn => btn.classList.toggle("is-active", btn === button));
+      state.activeSection = "list";
+      renderSectionTabs();
       renderList();
     });
   });
@@ -448,7 +449,7 @@ async function loadPublicCollection(shareSlug) {
 
 function applyShareModeUI() {
   document.body.classList.add("is-share-mode");
-  elements.shareTabs.classList.remove("is-hidden");
+  elements.shareBottomNav.classList.remove("is-hidden");
   elements.listPanelEyebrow.textContent = "Öffentliche Sammlung";
   elements.listPanelTitle.textContent = state.ownerName ? `Sammlung von ${state.ownerName}` : "Geteilte Sammlung";
   elements.shareIntro.textContent = "Vergleiche die Liste mit deinen eigenen Stickern – so siehst du direkt, was du anbieten oder eintauschen kannst.";
@@ -469,10 +470,11 @@ function updateTeamSortToggle() {
 
 function renderSectionTabs() {
   document.querySelectorAll(".bottom-nav__item").forEach(button => {
-    if (!button.dataset.sectionTab) {
-      return;
+    if (button.dataset.sectionTab) {
+      button.classList.toggle("is-active", button.dataset.sectionTab === state.activeSection);
+    } else if (button.dataset.shareTab) {
+      button.classList.toggle("is-active", state.activeSection === "list" && button.dataset.shareTab === state.currentView);
     }
-    button.classList.toggle("is-active", button.dataset.sectionTab === state.activeSection);
   });
 
   document.querySelectorAll("[data-section-panel]").forEach(panel => {
@@ -542,19 +544,31 @@ function renderTeamOverview() {
     elements.teamOverviewGrid.innerHTML = "";
     elements.teamSearchResults.innerHTML = '<div class="empty-state">Kein Team passt zu deiner Suche oder dem Filter.</div>';
   } else {
-    elements.teamOverviewGrid.innerHTML = overview.map(team => `
-      <button class="team-tile${team.id === "fwc" ? " team-tile--special" : ""}" type="button" data-team-tile="${team.id}" data-flag="${team.flag}" style="background-color: ${completionTint(team.haveCount / team.expectedCount)};">
+    elements.teamOverviewGrid.innerHTML = overview.map(team => {
+      const tint = state.mode === "share" ? "" : ` style="background-color: ${completionTint(team.haveCount / team.expectedCount)};"`;
+      return `
+      <button class="team-tile${team.id === "fwc" ? " team-tile--special" : ""}" type="button" data-team-tile="${team.id}" data-flag="${team.flag}"${tint}>
         <span class="team-tile__code">${team.id.toUpperCase()}</span>
         <span class="team-tile__name">${team.label}</span>
         <span class="team-tile__stats">${team.haveCount}/${team.expectedCount}</span>
         ${team.missingCount ? `<span class="team-tile__badge team-tile__badge--need">${team.missingCount}</span>` : ""}
         ${team.duplicateCount ? `<span class="team-tile__badge team-tile__badge--duplicate">+${team.duplicateCount}</span>` : ""}
       </button>
-    `).join("");
+    `;
+    }).join("");
 
     elements.teamSearchResults.innerHTML = "";
     elements.teamOverviewGrid.querySelectorAll("[data-team-tile]").forEach(tile => {
-      tile.addEventListener("click", () => openTeam(tile.dataset.teamTile));
+      tile.addEventListener("click", () => {
+        if (state.mode === "share") {
+          state.filterTeam = tile.dataset.teamTile;
+          elements.teamFilter.value = state.filterTeam;
+          state.activeSection = "list";
+          render();
+        } else {
+          openTeam(tile.dataset.teamTile);
+        }
+      });
     });
   }
 

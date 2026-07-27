@@ -4,7 +4,7 @@ Mobile Webapp zum Verwalten von gesuchten und doppelten WM-2026-Stickern mit zen
 
 ## Aktuelle App-Version
 
-- `0.6.0`
+- `0.6.1`
 
 ## Was jetzt funktioniert
 

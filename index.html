@@ -30,7 +30,7 @@
       </div>
       <div class="pin-gate__meta">
         <p class="eyebrow">StickerTausch 2026</p>
-        <span class="version-badge">v0.6.0</span>
+        <span class="version-badge">v0.6.1</span>
       </div>
       <h1 class="pin-gate__title">Sammlung<br>entsperren</h1>
       <p class="hint">Bitte gib deine persönliche PIN ein, um deine Sammlung zu öffnen.</p>
@@ -195,11 +195,6 @@
         </div>
         <p class="hint is-hidden" id="shareIntro"></p>
 
-        <div class="share-tabs is-hidden" id="shareTabs" role="tablist" aria-label="Ansicht wählen">
-          <button class="share-tabs__item is-active" type="button" data-share-tab="wanted">Gesuchte Sticker</button>
-          <button class="share-tabs__item" type="button" data-share-tab="duplicate">Doppelte Sticker</button>
-        </div>
-
         <div class="filters">
           <label class="field">
             <span class="field__label">Suche</span>
@@ -340,14 +335,20 @@
       </section>
     </main>
 
-    <nav class="bottom-nav" aria-label="Hauptnavigation">
+    <nav class="bottom-nav" id="mainBottomNav" aria-label="Hauptnavigation">
       <button class="bottom-nav__item is-active" type="button" data-section-tab="teams">Teams</button>
       <button class="bottom-nav__item" type="button" data-section-tab="list">Liste</button>
       <button class="bottom-nav__item" type="button" data-section-tab="matches">Tausch</button>
       <button class="bottom-nav__item is-hidden" type="button" data-section-tab="people" id="peopleNavButton">Personen</button>
     </nav>
 
-    <p class="app-version-note" id="versionNote">Version v0.6.0</p>
+    <nav class="bottom-nav is-hidden" id="shareBottomNav" aria-label="Sharing-Navigation">
+      <button class="bottom-nav__item" type="button" data-section-tab="teams">Teams</button>
+      <button class="bottom-nav__item" type="button" data-share-tab="wanted">Gesucht</button>
+      <button class="bottom-nav__item" type="button" data-share-tab="duplicate">Doppelt</button>
+    </nav>
+
+    <p class="app-version-note" id="versionNote">Version v0.6.1</p>
   </div>
 
   <template id="teamCardTemplate">
