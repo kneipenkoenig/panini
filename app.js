@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.5.12";
+const APP_VERSION = "0.6.0";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -102,6 +102,11 @@ const elements = {
   shareUrl: document.querySelector("#shareUrl"),
   listContainer: document.querySelector("#listContainer"),
   listSummary: document.querySelector("#listSummary"),
+  listPanelEyebrow: document.querySelector("#listPanelEyebrow"),
+  listPanelTitle: document.querySelector("#listPanelTitle"),
+  shareIntro: document.querySelector("#shareIntro"),
+  shareTabs: document.querySelector("#shareTabs"),
+  shareTabButtons: document.querySelectorAll("[data-share-tab]"),
   activeFilters: document.querySelector("#activeFilters"),
   toast: document.querySelector("#toast"),
   teamCardTemplate: document.querySelector("#teamCardTemplate"),
@@ -166,11 +171,14 @@ async function init() {
     state.mode = "share";
     state.shareSlug = shareSlug;
     await loadPublicCollection(shareSlug);
+    state.activeSection = "list";
+    state.currentView = "wanted";
     const teamParam = params.get(TEAM_PARAM);
     if (teamParam && TEAMS.some(team => team.id === teamParam)) {
       state.filterTeam = teamParam;
-      state.activeSection = "team";
+      elements.teamFilter.value = teamParam;
     }
+    applyShareModeUI();
   } else {
     const storedPin = window.localStorage.getItem(PIN_STORAGE_KEY) || "";
     elements.authPinInput.value = storedPin;
@@ -262,6 +270,14 @@ function wireEvents() {
   elements.teamFilter.addEventListener("change", event => {
     state.filterTeam = event.target.value;
     renderList();
+  });
+
+  elements.shareTabButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      state.currentView = button.dataset.shareTab;
+      elements.shareTabButtons.forEach(btn => btn.classList.toggle("is-active", btn === button));
+      renderList();
+    });
   });
 
   elements.shareButton.addEventListener("click", async () => {
@@ -428,6 +444,15 @@ async function loadPublicCollection(shareSlug) {
   state.stickers = payload.stickers || {};
   state.ownerName = payload.ownerName || "";
   updateSyncStatus(state.ownerName ? `Öffentliche Liste von ${state.ownerName} geladen.` : "Öffentliche Liste geladen.");
+}
+
+function applyShareModeUI() {
+  document.body.classList.add("is-share-mode");
+  elements.shareTabs.classList.remove("is-hidden");
+  elements.listPanelEyebrow.textContent = "Öffentliche Sammlung";
+  elements.listPanelTitle.textContent = state.ownerName ? `Sammlung von ${state.ownerName}` : "Geteilte Sammlung";
+  elements.shareIntro.textContent = "Vergleiche die Liste mit deinen eigenen Stickern – so siehst du direkt, was du anbieten oder eintauschen kannst.";
+  elements.shareIntro.classList.remove("is-hidden");
 }
 
 function updateTeamStickerToggle() {
@@ -620,19 +645,22 @@ function renderList() {
     card.querySelector(".team-card__eyebrow").textContent = group.team.id.toUpperCase();
     card.querySelector("h3").textContent = group.team.label;
 
+    const showWanted = group.wanted.length && state.currentView !== "duplicate";
+    const showDuplicate = group.duplicate.length && state.currentView !== "wanted";
+
     const counts = card.querySelector(".team-card__counts");
-    if (group.wanted.length) {
+    if (showWanted) {
       counts.appendChild(buildCountBadge("wanted", `${group.wanted.length} gesucht`));
     }
-    if (group.duplicate.length) {
+    if (showDuplicate) {
       counts.appendChild(buildCountBadge("duplicate", `${group.duplicate.length} doppelt`));
     }
 
     const lists = card.querySelector(".team-card__lists");
-    if (group.wanted.length) {
+    if (showWanted) {
       lists.appendChild(buildListGroup("Gesucht", group.wanted, "wanted"));
     }
-    if (group.duplicate.length) {
+    if (showDuplicate) {
       lists.appendChild(buildListGroup("Doppelt", group.duplicate, "duplicate"));
     }
 

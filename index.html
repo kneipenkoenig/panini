@@ -30,7 +30,7 @@
       </div>
       <div class="pin-gate__meta">
         <p class="eyebrow">StickerTausch 2026</p>
-        <span class="version-badge">v0.5.12</span>
+        <span class="version-badge">v0.6.0</span>
       </div>
       <h1 class="pin-gate__title">Sammlung<br>entsperren</h1>
       <p class="hint">Bitte gib deine persönliche PIN ein, um deine Sammlung zu öffnen.</p>
@@ -189,9 +189,15 @@
       <section class="panel" id="collectionPanel" data-section-panel="list">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Deine Liste</p>
-            <h2>Gesucht & doppelt</h2>
+            <p class="panel__eyebrow" id="listPanelEyebrow">Deine Liste</p>
+            <h2 id="listPanelTitle">Gesucht & doppelt</h2>
           </div>
+        </div>
+        <p class="hint is-hidden" id="shareIntro"></p>
+
+        <div class="share-tabs is-hidden" id="shareTabs" role="tablist" aria-label="Ansicht wählen">
+          <button class="share-tabs__item is-active" type="button" data-share-tab="wanted">Gesuchte Sticker</button>
+          <button class="share-tabs__item" type="button" data-share-tab="duplicate">Doppelte Sticker</button>
         </div>
 
         <div class="filters">
@@ -341,7 +347,7 @@
       <button class="bottom-nav__item is-hidden" type="button" data-section-tab="people" id="peopleNavButton">Personen</button>
     </nav>
 
-    <p class="app-version-note" id="versionNote">Version v0.5.12</p>
+    <p class="app-version-note" id="versionNote">Version v0.6.0</p>
   </div>
 
   <template id="teamCardTemplate">

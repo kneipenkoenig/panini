@@ -715,6 +715,59 @@ a:focus-visible {
   margin-top: 14px;
 }
 
+.share-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.share-tabs.is-hidden {
+  display: none;
+}
+
+.share-tabs__item {
+  flex: 1 1 0;
+  min-height: 46px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(24, 33, 28, 0.06);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.share-tabs__item:hover {
+  transform: translateY(-1px);
+}
+
+.share-tabs__item:active {
+  transform: scale(0.97);
+}
+
+.share-tabs__item.is-active {
+  background: linear-gradient(135deg, var(--primary-bright), var(--primary-dark));
+  color: var(--cream);
+  box-shadow: var(--shadow-pop);
+}
+
+#shareIntro.is-hidden {
+  display: none;
+}
+
+body.is-share-mode .topbar,
+body.is-share-mode .bottom-nav,
+body.is-share-mode .me-status-row,
+body.is-share-mode #stickerCheckPanel,
+body.is-share-mode #teamPagePanel {
+  display: none !important;
+}
+
+body.is-share-mode .app-shell {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+
 .team-search {
   margin-top: 8px;
 }
