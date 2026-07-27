@@ -308,6 +308,66 @@ h3 {
   color: var(--cream);
 }
 
+.cart-bar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: linear-gradient(165deg, var(--surface-dark), var(--surface-dark-2));
+  color: var(--cream);
+  box-shadow: var(--shadow-sm);
+}
+
+.cart-bar.is-hidden {
+  display: none;
+}
+
+.cart-bar__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cart-bar__summary {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.cart-bar__actions {
+  margin: 0;
+}
+
+.cart-bar .icon-button-ghost {
+  width: 30px;
+  height: 30px;
+  background: rgba(247, 236, 219, 0.14);
+  color: var(--cream);
+}
+
+.cart-bar .icon-button-ghost:hover {
+  background: rgba(247, 236, 219, 0.22);
+}
+
+.cart-bar .secondary-button {
+  background: rgba(247, 236, 219, 0.14);
+  color: var(--cream);
+}
+
+.sticker-pill--selected {
+  box-shadow: 0 0 0 2px var(--primary-bright) inset;
+  font-weight: 900;
+}
+
+body.is-share-mode .sticker-pill {
+  cursor: pointer;
+}
+
 .sync-status {
   display: flex;
   align-items: center;

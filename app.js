@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.6.1";
+const APP_VERSION = "0.6.2";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -75,6 +75,7 @@ const state = {
   teamSearchTerm: "",
   stickers: {},
   history: [],
+  cart: [],
   authPin: "",
   authError: "",
   shareSlug: "",
@@ -131,6 +132,12 @@ const elements = {
   authForm: document.querySelector("#authForm"),
   authPinInput: document.querySelector("#authPinInput"),
   authStatus: document.querySelector("#authStatus"),
+  cartBar: document.querySelector("#cartBar"),
+  cartSummary: document.querySelector("#cartSummary"),
+  cartClearButton: document.querySelector("#cartClearButton"),
+  cartCopyWantedButton: document.querySelector("#cartCopyWantedButton"),
+  cartCopyDuplicateButton: document.querySelector("#cartCopyDuplicateButton"),
+  cartCopyBothButton: document.querySelector("#cartCopyBothButton"),
   syncStatus: document.querySelector("#syncStatus"),
   meStatus: document.querySelector("#meStatus"),
   logoutButton: document.querySelector("#logoutButton"),
@@ -279,6 +286,39 @@ function wireEvents() {
       renderSectionTabs();
       renderList();
     });
+  });
+
+  elements.cartClearButton.addEventListener("click", () => {
+    clearCart();
+    renderCart();
+    renderList();
+  });
+
+  elements.cartCopyWantedButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(buildCartText(["wanted"]));
+      showToast("Gesuchte Sticker kopiert.");
+    } catch (error) {
+      showToast("Kopieren nicht möglich.");
+    }
+  });
+
+  elements.cartCopyDuplicateButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(buildCartText(["duplicate"]));
+      showToast("Doppelte Sticker kopiert.");
+    } catch (error) {
+      showToast("Kopieren nicht möglich.");
+    }
+  });
+
+  elements.cartCopyBothButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(buildCartText(["duplicate", "wanted"]));
+      showToast("Gesuchte & doppelte Sticker kopiert.");
+    } catch (error) {
+      showToast("Kopieren nicht möglich.");
+    }
   });
 
   elements.shareButton.addEventListener("click", async () => {
@@ -447,6 +487,63 @@ async function loadPublicCollection(shareSlug) {
   updateSyncStatus(state.ownerName ? `Öffentliche Liste von ${state.ownerName} geladen.` : "Öffentliche Liste geladen.");
 }
 
+function isInCart(teamId, number, kind) {
+  return state.cart.some(item => item.teamId === teamId && item.number === number && item.kind === kind);
+}
+
+function toggleCartItem(teamId, number, kind) {
+  const idx = state.cart.findIndex(item => item.teamId === teamId && item.number === number && item.kind === kind);
+  if (idx >= 0) {
+    state.cart.splice(idx, 1);
+  } else {
+    state.cart.push({ teamId, number, kind });
+  }
+}
+
+function clearCart() {
+  state.cart = [];
+}
+
+function groupCartByTeam(kind) {
+  const grouped = new Map();
+  state.cart.filter(item => item.kind === kind).forEach(item => {
+    if (!grouped.has(item.teamId)) {
+      grouped.set(item.teamId, []);
+    }
+    grouped.get(item.teamId).push(item.number);
+  });
+  return [...grouped.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], "de"))
+    .map(([teamId, numbers]) => {
+      const sorted = numbers.slice().sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10));
+      return `${teamId.toUpperCase()} ${sorted.join(",")}`;
+    });
+}
+
+function buildCartText(kinds) {
+  const titles = { duplicate: "Doppelte Sticker:", wanted: "Gesuchte Sticker:" };
+  return kinds
+    .map(kind => {
+      const lines = groupCartByTeam(kind);
+      return `${titles[kind]}\n${lines.length ? lines.join("\n") : "keine"}`;
+    })
+    .join("\n\n");
+}
+
+function renderCart() {
+  if (state.mode !== "share") {
+    return;
+  }
+  const hasItems = state.cart.length > 0;
+  elements.cartBar.classList.toggle("is-hidden", !hasItems);
+  if (!hasItems) {
+    return;
+  }
+  const wantedCount = state.cart.filter(item => item.kind === "wanted").length;
+  const duplicateCount = state.cart.filter(item => item.kind === "duplicate").length;
+  elements.cartSummary.textContent = `${state.cart.length} ausgewählt (${wantedCount} gesucht, ${duplicateCount} doppelt)`;
+}
+
 function applyShareModeUI() {
   document.body.classList.add("is-share-mode");
   elements.shareBottomNav.classList.remove("is-hidden");
@@ -494,6 +591,7 @@ function render() {
   renderList();
   renderStickerCheck();
   renderHistory();
+  renderCart();
   renderMatches();
   renderPeople();
 }
@@ -713,6 +811,14 @@ function buildListGroup(title, items, status) {
         pushHistory({ teamId: item.teamId, number: item.number, prevEntry, label: `${item.teamId.toUpperCase()} ${item.number} → gesucht` });
         render();
         await persistCollection(`Sticker ${item.number} entfernt.`);
+      });
+    } else if (state.mode === "share") {
+      pill.classList.toggle("sticker-pill--selected", isInCart(item.teamId, item.number, status));
+      pill.title = "Für den Warenkorb auswählen";
+      pill.addEventListener("click", () => {
+        toggleCartItem(item.teamId, item.number, status);
+        pill.classList.toggle("sticker-pill--selected");
+        renderCart();
       });
     }
     row.appendChild(pill);

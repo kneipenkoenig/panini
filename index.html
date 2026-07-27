@@ -30,7 +30,7 @@
       </div>
       <div class="pin-gate__meta">
         <p class="eyebrow">StickerTausch 2026</p>
-        <span class="version-badge">v0.6.1</span>
+        <span class="version-badge">v0.6.2</span>
       </div>
       <h1 class="pin-gate__title">Sammlung<br>entsperren</h1>
       <p class="hint">Bitte gib deine persönliche PIN ein, um deine Sammlung zu öffnen.</p>
@@ -64,6 +64,36 @@
         </div>
       </div>
     </header>
+
+    <div class="cart-bar is-hidden" id="cartBar">
+      <div class="cart-bar__top">
+        <span class="cart-bar__summary" id="cartSummary">0 ausgewählt</span>
+        <button class="icon-button-ghost" id="cartClearButton" type="button" title="Warenkorb leeren" aria-label="Warenkorb leeren">✕</button>
+      </div>
+      <div class="cart-bar__actions segmented--fit">
+        <button class="secondary-button copy-button" id="cartCopyWantedButton" type="button" title="Gesuchte Sticker kopieren">
+          <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Gesucht</span>
+        </button>
+        <button class="secondary-button copy-button" id="cartCopyDuplicateButton" type="button" title="Doppelte Sticker kopieren">
+          <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Doppelt</span>
+        </button>
+        <button class="primary-button copy-button" id="cartCopyBothButton" type="button" title="Gesucht + Doppelt kopieren">
+          <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Gesucht + Doppelt</span>
+        </button>
+      </div>
+    </div>
 
     <p class="sync-status" id="syncStatus">Warte auf Verbindung …</p>
     <div class="me-status-row">
@@ -348,7 +378,7 @@
       <button class="bottom-nav__item" type="button" data-share-tab="duplicate">Doppelt</button>
     </nav>
 
-    <p class="app-version-note" id="versionNote">Version v0.6.1</p>
+    <p class="app-version-note" id="versionNote">Version v0.6.2</p>
   </div>
 
   <template id="teamCardTemplate">
