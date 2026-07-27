@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.6.3";
+const APP_VERSION = "0.6.4";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -107,7 +107,7 @@ const elements = {
   listPanelEyebrow: document.querySelector("#listPanelEyebrow"),
   listPanelTitle: document.querySelector("#listPanelTitle"),
   shareIntro: document.querySelector("#shareIntro"),
-  shareBottomNav: document.querySelector("#shareBottomNav"),
+  shareTopbar: document.querySelector("#shareTopbar"),
   shareTabButtons: document.querySelectorAll("[data-share-tab]"),
   shareViewToggle: document.querySelector("#shareViewToggle"),
   shareViewButtons: document.querySelectorAll("[data-share-view]"),
@@ -137,7 +137,8 @@ const elements = {
   authPinInput: document.querySelector("#authPinInput"),
   authStatus: document.querySelector("#authStatus"),
   cartBar: document.querySelector("#cartBar"),
-  cartSummary: document.querySelector("#cartSummary"),
+  cartWantedCount: document.querySelector("#cartWantedCount"),
+  cartDuplicateCount: document.querySelector("#cartDuplicateCount"),
   cartClearButton: document.querySelector("#cartClearButton"),
   cartCopyWantedButton: document.querySelector("#cartCopyWantedButton"),
   cartCopyDuplicateButton: document.querySelector("#cartCopyDuplicateButton"),
@@ -553,7 +554,8 @@ function renderCart() {
   }
   const wantedCount = state.cart.filter(item => item.kind === "wanted").length;
   const duplicateCount = state.cart.filter(item => item.kind === "duplicate").length;
-  elements.cartSummary.textContent = `${state.cart.length} ausgewählt (${wantedCount} gesucht, ${duplicateCount} doppelt)`;
+  elements.cartWantedCount.textContent = `${wantedCount} gesucht`;
+  elements.cartDuplicateCount.textContent = `${duplicateCount} doppelt`;
 }
 
 function buildShareTileTeams() {
@@ -604,7 +606,7 @@ function renderShareTileGrid() {
 
 function applyShareModeUI() {
   document.body.classList.add("is-share-mode");
-  elements.shareBottomNav.classList.remove("is-hidden");
+  elements.shareTopbar.classList.remove("is-hidden");
   elements.shareViewToggle.classList.remove("is-hidden");
   elements.listPanelEyebrow.textContent = "Öffentliche Sammlung";
   elements.listPanelTitle.textContent = state.ownerName ? `Sammlung von ${state.ownerName}` : "Geteilte Sammlung";
@@ -625,12 +627,11 @@ function updateTeamSortToggle() {
 }
 
 function renderSectionTabs() {
-  document.querySelectorAll(".bottom-nav__item").forEach(button => {
-    if (button.dataset.sectionTab) {
-      button.classList.toggle("is-active", button.dataset.sectionTab === state.activeSection);
-    } else if (button.dataset.shareTab) {
-      button.classList.toggle("is-active", state.activeSection === "list" && button.dataset.shareTab === state.currentView);
-    }
+  document.querySelectorAll("[data-section-tab]").forEach(button => {
+    button.classList.toggle("is-active", button.dataset.sectionTab === state.activeSection);
+  });
+  document.querySelectorAll("[data-share-tab]").forEach(button => {
+    button.classList.toggle("is-active", state.activeSection === "list" && button.dataset.shareTab === state.currentView);
   });
 
   document.querySelectorAll("[data-section-panel]").forEach(panel => {

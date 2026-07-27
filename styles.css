@@ -308,19 +308,71 @@ h3 {
   color: var(--cream);
 }
 
-.cart-bar {
+.share-topbar {
   position: sticky;
   top: env(safe-area-inset-top, 0px);
   z-index: 15;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 10px;
+}
+
+.share-topbar.is-hidden {
+  display: none;
+}
+
+.share-tabs-top {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 16px;
+  background: linear-gradient(165deg, rgba(22, 40, 31, 0.94), rgba(15, 29, 22, 0.96));
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 28px rgba(10, 18, 14, 0.28);
+}
+
+.share-tabs-top__item {
+  flex: 1 1 0;
+  min-height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(247, 236, 219, 0.6);
+  font-weight: 800;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.share-tabs-top__item:hover {
+  transform: translateY(-1px);
+}
+
+.share-tabs-top__item:active {
+  transform: scale(0.97);
+}
+
+.share-tabs-top__item.is-active {
+  background: linear-gradient(135deg, var(--primary-bright), var(--primary-dark));
+  color: var(--cream);
+  box-shadow: 0 8px 18px rgba(201, 79, 36, 0.35);
+}
+
+.cart-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 10px 12px;
   border-radius: 16px;
   background: linear-gradient(165deg, var(--surface-dark), var(--surface-dark-2));
   color: var(--cream);
   box-shadow: var(--shadow-sm);
+  animation: cart-bar-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cart-bar-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .cart-bar.is-hidden {
@@ -335,8 +387,34 @@ h3 {
 }
 
 .cart-bar__summary {
-  font-size: 0.82rem;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cart-bar__icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.cart-bar__count {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.cart-bar__count--wanted {
+  background: rgba(240, 160, 111, 0.18);
+  color: #f0a06f;
+}
+
+.cart-bar__count--duplicate {
+  background: rgba(111, 202, 164, 0.18);
+  color: #6fcaa4;
 }
 
 .cart-bar__actions {
@@ -364,8 +442,16 @@ h3 {
   font-weight: 900;
 }
 
+.sticker-pill--selected::after {
+  content: " ✓";
+}
+
 body.is-share-mode .sticker-pill {
   cursor: pointer;
+}
+
+body.is-share-mode .app-shell {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
 }
 
 #listContainer.is-hidden,
