@@ -30,7 +30,7 @@
       </div>
       <div class="pin-gate__meta">
         <p class="eyebrow">StickerTausch 2026</p>
-        <span class="version-badge">v0.6.4</span>
+        <span class="version-badge">v0.6.5</span>
       </div>
       <h1 class="pin-gate__title">Sammlung<br>entsperren</h1>
       <p class="hint">Bitte gib deine persönliche PIN ein, um deine Sammlung zu öffnen.</p>
@@ -248,9 +248,10 @@
           </label>
         </div>
 
-        <div class="segmented segmented--fit is-hidden" id="shareViewToggle" role="tablist" aria-label="Ansicht wählen">
-          <button class="segmented__item is-active" type="button" data-share-view="list">Liste</button>
-          <button class="segmented__item" type="button" data-share-view="tiles">Kacheln</button>
+        <div class="segmented segmented--fit" id="listViewToggle" role="tablist" aria-label="Ansicht wählen">
+          <button class="segmented__item is-active" type="button" data-list-view="all">Alle</button>
+          <button class="segmented__item" type="button" data-list-view="wanted">Gesucht</button>
+          <button class="segmented__item" type="button" data-list-view="duplicate">Doppelt</button>
         </div>
 
         <div class="list-meta">
@@ -258,6 +259,8 @@
         </div>
 
         <div class="list-actions segmented--fit">
+          <button class="segmented__item is-active is-hidden" id="shareViewListButton" type="button" data-share-view="list">Liste</button>
+          <button class="segmented__item is-hidden" id="shareViewTilesButton" type="button" data-share-view="tiles">Kacheln</button>
           <button class="ghost-button copy-button" id="shareButton" type="button">
             <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 14a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -278,6 +281,13 @@
               <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
             <span>Doppelte</span>
+          </button>
+          <button class="primary-button copy-button" id="copyBothButton" type="button">
+            <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Beides</span>
           </button>
         </div>
 
@@ -389,7 +399,7 @@
       <button class="bottom-nav__item is-hidden" type="button" data-section-tab="people" id="peopleNavButton">Personen</button>
     </nav>
 
-    <p class="app-version-note" id="versionNote">Version v0.6.4</p>
+    <p class="app-version-note" id="versionNote">Version v0.6.5</p>
   </div>
 
   <template id="teamCardTemplate">

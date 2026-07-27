@@ -878,7 +878,8 @@ body.is-share-mode .topbar,
 body.is-share-mode #mainBottomNav,
 body.is-share-mode .me-status-row,
 body.is-share-mode #stickerCheckPanel,
-body.is-share-mode #teamPagePanel {
+body.is-share-mode #teamPagePanel,
+body.is-share-mode #listViewToggle {
   display: none !important;
 }
 
@@ -1091,6 +1092,10 @@ body.is-share-mode #teamPagePanel {
 .list-actions {
   display: flex;
   margin-top: 12px;
+}
+
+.list-actions .segmented__item.is-hidden {
+  display: none;
 }
 
 .copy-button {

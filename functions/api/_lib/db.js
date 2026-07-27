@@ -103,7 +103,7 @@ export async function resolvePerson(env, pin) {
 export async function loadStickers(env, personId, publicOnly = false) {
   const statement = publicOnly
     ? env.DB.prepare(
-        "SELECT team_id, number, status, quantity FROM stickers WHERE person_id = ? AND status IN ('wanted', 'duplicate') ORDER BY team_id, CAST(number AS INTEGER)"
+        "SELECT team_id, number, status, quantity FROM stickers WHERE person_id = ? AND status IN ('owned', 'duplicate') ORDER BY team_id, CAST(number AS INTEGER)"
       ).bind(personId)
     : env.DB.prepare(
         "SELECT team_id, number, status, quantity FROM stickers WHERE person_id = ? ORDER BY team_id, CAST(number AS INTEGER)"

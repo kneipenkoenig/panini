@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.6.4";
+const APP_VERSION = "0.6.5";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -100,16 +100,17 @@ const elements = {
   copyShareButton: document.querySelector("#copyShareButton"),
   copyWantedButton: document.querySelector("#copyWantedButton"),
   copyDuplicateButton: document.querySelector("#copyDuplicateButton"),
+  copyBothButton: document.querySelector("#copyBothButton"),
   shareBox: document.querySelector("#shareBox"),
   shareUrl: document.querySelector("#shareUrl"),
   listContainer: document.querySelector("#listContainer"),
   listSummary: document.querySelector("#listSummary"),
+  listViewButtons: document.querySelectorAll("[data-list-view]"),
   listPanelEyebrow: document.querySelector("#listPanelEyebrow"),
   listPanelTitle: document.querySelector("#listPanelTitle"),
   shareIntro: document.querySelector("#shareIntro"),
   shareTopbar: document.querySelector("#shareTopbar"),
   shareTabButtons: document.querySelectorAll("[data-share-tab]"),
-  shareViewToggle: document.querySelector("#shareViewToggle"),
   shareViewButtons: document.querySelectorAll("[data-share-view]"),
   shareTileGrid: document.querySelector("#shareTileGrid"),
   activeFilters: document.querySelector("#activeFilters"),
@@ -219,6 +220,8 @@ function wireEvents() {
       state.activeSection = button.dataset.sectionTab;
       if (state.activeSection === "list") {
         state.currentView = "all";
+        updateListViewToggle();
+        renderList();
       }
       renderSectionTabs();
       if (state.activeSection === "matches" && !state.matches) {
@@ -289,6 +292,14 @@ function wireEvents() {
       state.currentView = button.dataset.shareTab;
       state.activeSection = "list";
       renderSectionTabs();
+      renderList();
+    });
+  });
+
+  elements.listViewButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      state.currentView = button.dataset.listView;
+      updateListViewToggle();
       renderList();
     });
   });
@@ -369,6 +380,15 @@ function wireEvents() {
       showToast("Doppelt-Liste kopiert.");
     } catch (error) {
       showToast("Doppelt-Liste konnte nicht kopiert werden.");
+    }
+  });
+
+  elements.copyBothButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(buildWhatsappList("both"));
+      showToast("Gesucht & Doppelt kopiert.");
+    } catch (error) {
+      showToast("Liste konnte nicht kopiert werden.");
     }
   });
 
@@ -607,7 +627,7 @@ function renderShareTileGrid() {
 function applyShareModeUI() {
   document.body.classList.add("is-share-mode");
   elements.shareTopbar.classList.remove("is-hidden");
-  elements.shareViewToggle.classList.remove("is-hidden");
+  elements.shareViewButtons.forEach(button => button.classList.remove("is-hidden"));
   elements.listPanelEyebrow.textContent = "Öffentliche Sammlung";
   elements.listPanelTitle.textContent = state.ownerName ? `Sammlung von ${state.ownerName}` : "Geteilte Sammlung";
   elements.shareIntro.textContent = "Vergleiche die Liste mit deinen eigenen Stickern – so siehst du direkt, was du anbieten oder eintauschen kannst.";
@@ -623,6 +643,12 @@ function updateTeamStickerToggle() {
 function updateTeamSortToggle() {
   elements.teamSortButtons.forEach(button => {
     button.classList.toggle("is-active", button.dataset.teamSort === state.teamSortBy);
+  });
+}
+
+function updateListViewToggle() {
+  elements.listViewButtons.forEach(button => {
+    button.classList.toggle("is-active", button.dataset.listView === state.currentView);
   });
 }
 
@@ -645,6 +671,7 @@ function render() {
   renderSectionTabs();
   updateTeamStickerToggle();
   updateTeamSortToggle();
+  updateListViewToggle();
   renderMode();
   renderSummary();
   renderTeamOverview();
@@ -917,6 +944,9 @@ function renderActiveFilters() {
 }
 
 function buildWhatsappList(kind) {
+  if (kind === "both") {
+    return `${buildWhatsappList("duplicate")}\n\n${buildWhatsappList("wanted")}`;
+  }
   const title = kind === "wanted" ? "Gesuchte Sticker:" : "Doppelte Sticker:";
   const grouped = groupEntries();
   const lines = grouped
