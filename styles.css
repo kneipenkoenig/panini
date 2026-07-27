@@ -368,6 +368,15 @@ body.is-share-mode .sticker-pill {
   cursor: pointer;
 }
 
+#listContainer.is-hidden,
+#shareTileGrid.is-hidden {
+  display: none;
+}
+
+#shareTileGrid {
+  margin-top: 18px;
+}
+
 .sync-status {
   display: flex;
   align-items: center;

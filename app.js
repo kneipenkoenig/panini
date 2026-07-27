@@ -1,7 +1,7 @@
 const PIN_STORAGE_KEY = "sticker-tausch-2026-pin";
 const SHARE_PARAM = "share";
 const TEAM_PARAM = "team";
-const APP_VERSION = "0.6.2";
+const APP_VERSION = "0.6.3";
 const HISTORY_LIMIT = 8;
 
 const TEAMS = [
@@ -76,6 +76,7 @@ const state = {
   stickers: {},
   history: [],
   cart: [],
+  shareViewMode: "list",
   authPin: "",
   authError: "",
   shareSlug: "",
@@ -108,6 +109,9 @@ const elements = {
   shareIntro: document.querySelector("#shareIntro"),
   shareBottomNav: document.querySelector("#shareBottomNav"),
   shareTabButtons: document.querySelectorAll("[data-share-tab]"),
+  shareViewToggle: document.querySelector("#shareViewToggle"),
+  shareViewButtons: document.querySelectorAll("[data-share-view]"),
+  shareTileGrid: document.querySelector("#shareTileGrid"),
   activeFilters: document.querySelector("#activeFilters"),
   toast: document.querySelector("#toast"),
   teamCardTemplate: document.querySelector("#teamCardTemplate"),
@@ -284,6 +288,14 @@ function wireEvents() {
       state.currentView = button.dataset.shareTab;
       state.activeSection = "list";
       renderSectionTabs();
+      renderList();
+    });
+  });
+
+  elements.shareViewButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      state.shareViewMode = button.dataset.shareView;
+      elements.shareViewButtons.forEach(btn => btn.classList.toggle("is-active", btn === button));
       renderList();
     });
   });
@@ -544,9 +556,56 @@ function renderCart() {
   elements.cartSummary.textContent = `${state.cart.length} ausgewählt (${wantedCount} gesucht, ${duplicateCount} doppelt)`;
 }
 
+function buildShareTileTeams() {
+  const relevant = buildTeamOverviewData().filter(team => {
+    if (state.currentView === "duplicate") {
+      return team.duplicateCount > 0;
+    }
+    return team.missingCount > 0;
+  });
+  const searchFiltered = relevant.filter(team => {
+    if (!state.searchTerm) {
+      return true;
+    }
+    const haystack = `${team.id} ${team.label}`.toLowerCase();
+    return haystack.includes(state.searchTerm);
+  });
+  const teamFiltered = state.filterTeam === "all"
+    ? searchFiltered
+    : searchFiltered.filter(team => team.id === state.filterTeam);
+  return sortTeams(teamFiltered);
+}
+
+function renderShareTileGrid() {
+  const teams = buildShareTileTeams();
+  if (!teams.length) {
+    elements.shareTileGrid.innerHTML = '<div class="empty-state">Kein Team passt zu diesem Filter.</div>';
+    return;
+  }
+
+  elements.shareTileGrid.innerHTML = teams.map(team => `
+    <button class="team-tile${team.id === "fwc" ? " team-tile--special" : ""}" type="button" data-share-tile="${team.id}" data-flag="${team.flag}">
+      <span class="team-tile__code">${team.id.toUpperCase()}</span>
+      <span class="team-tile__name">${team.label}</span>
+      <span class="team-tile__stats">${state.currentView === "duplicate" ? `+${team.duplicateCount}` : team.missingCount}</span>
+    </button>
+  `).join("");
+
+  elements.shareTileGrid.querySelectorAll("[data-share-tile]").forEach(tile => {
+    tile.addEventListener("click", () => {
+      state.filterTeam = tile.dataset.shareTile;
+      elements.teamFilter.value = state.filterTeam;
+      state.shareViewMode = "list";
+      elements.shareViewButtons.forEach(btn => btn.classList.toggle("is-active", btn.dataset.shareView === "list"));
+      renderList();
+    });
+  });
+}
+
 function applyShareModeUI() {
   document.body.classList.add("is-share-mode");
   elements.shareBottomNav.classList.remove("is-hidden");
+  elements.shareViewToggle.classList.remove("is-hidden");
   elements.listPanelEyebrow.textContent = "Öffentliche Sammlung";
   elements.listPanelTitle.textContent = state.ownerName ? `Sammlung von ${state.ownerName}` : "Geteilte Sammlung";
   elements.shareIntro.textContent = "Vergleiche die Liste mit deinen eigenen Stickern – so siehst du direkt, was du anbieten oder eintauschen kannst.";
@@ -743,6 +802,16 @@ function renderTeamDetail() {
 }
 
 function renderList() {
+  if (state.mode === "share" && state.shareViewMode === "tiles") {
+    elements.listContainer.classList.add("is-hidden");
+    elements.shareTileGrid.classList.remove("is-hidden");
+    renderActiveFilters();
+    renderShareTileGrid();
+    return;
+  }
+  elements.shareTileGrid.classList.add("is-hidden");
+  elements.listContainer.classList.remove("is-hidden");
+
   const grouped = filteredGroups();
   renderActiveFilters();
 
